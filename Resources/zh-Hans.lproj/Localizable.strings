@@ -1,0 +1,9 @@
+/* 菜单文案 —— RunCat 重建版 */
+"menu.show_usage" = "显示 CPU 占用率";
+"menu.about" = "关于 RunCat";
+"menu.quit" = "退出 RunCat";
+"menu.login_item_hint" = "登录时启动…";
+"menu.login_item_hint.title" = "将 RunCat 添加到登录项";
+"menu.login_item_hint.message" = "若要开机自动启动 RunCat，请打开 系统设置 → 通用 → 登录项，手动添加 RunCat。";
+"menu.login_item_hint.open_settings" = "打开系统设置";
+"menu.login_item_hint.ok" = "好";

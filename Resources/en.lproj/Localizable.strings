@@ -1,0 +1,9 @@
+/* Menu strings — RunCat preservation rebuild */
+"menu.show_usage" = "Show CPU Usage";
+"menu.about" = "About RunCat";
+"menu.quit" = "Quit RunCat";
+"menu.login_item_hint" = "Launch at Login…";
+"menu.login_item_hint.title" = "Add RunCat to Login Items";
+"menu.login_item_hint.message" = "To launch RunCat automatically at login, open System Settings → General → Login Items and add RunCat there.";
+"menu.login_item_hint.open_settings" = "Open System Settings";
+"menu.login_item_hint.ok" = "OK";
