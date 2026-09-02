@@ -15,12 +15,25 @@ import PackageDescription
 
 let package = Package(
     name: "RunCat",
+    defaultLocalization: "en",
     platforms: [
-        .macOS(.v10_14)
+        .macOS(.v13)
     ],
     targets: [
+        // Vendored copy of https://github.com/Kyome22/SystemInfoKit
+        // (Apache-2.0, © Takuto Nakamura) — the official data layer of
+        // RunCat, pinned as a local target so the repository stays
+        // self-contained. Keep the Apache-2.0 headers in every file.
+        .target(
+            name: "SystemInfoKit",
+            path: "Sources/SystemInfoKit",
+            resources: [
+                .process("Resources")
+            ]
+        ),
         .executableTarget(
             name: "RunCat",
+            dependencies: ["SystemInfoKit"],
             path: "Sources/RunCat"
         )
     ]

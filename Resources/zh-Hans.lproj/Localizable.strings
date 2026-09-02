@@ -7,3 +7,6 @@
 "menu.login_item_hint.message" = "若要开机自动启动 RunCat，请打开 系统设置 → 通用 → 登录项，手动添加 RunCat。";
 "menu.login_item_hint.open_settings" = "打开系统设置";
 "menu.login_item_hint.ok" = "好";
+"settings.show_usage" = "显示 CPU 占用率";
+"store.unavailable" = "此重建版不提供跑者商店（原 App Store 服务已下架）。";
+"selfmade.unavailable" = "此重建版暂不支持自制跑者。";

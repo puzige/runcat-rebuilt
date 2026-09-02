@@ -1,0 +1,24 @@
+/* Dashboard — extracted from the original delisted RunCat app (v12.8.0) */
+"aboutApp" = "О программе RunCat";
+"activityMonitor" = "Монитор активности";
+"back" = "Назад";
+"categoryAnimal" = "Бегуны-животные";
+"categoryDefault" = "Обычные бегуны";
+"categoryInanimate" = "Неживые бегуны";
+"categorySeasonal" = "Сезонные бегуны";
+"categorySelfMade" = "Самодельные бегуны";
+"categorySpecial" = "Специальные цветные бегуны";
+"contributeToApp" = "Внести свой вклад в RunCat";
+"debugSleep" = "Debug овечка";
+"debugWakeUp" = "Debug подъём";
+"endlessGame" = "Играть в бесконечную игру";
+"help" = "Помощь";
+"helpFAQ" = "Часто задаваемые вопросы";
+"helpHowToAdd" = "Как добавить самодельного бегуна";
+"more" = "Дополнительно";
+"reportAnIssue" = "Сообщить об ошибке";
+"runners" = "Бегуны";
+"selfMade" = "Самодельный";
+"settings" = "Настройки";
+"store" = "Магазин";
+"terminateApp" = "Завершить RunCat";

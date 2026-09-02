@@ -1,0 +1,24 @@
+/* Dashboard — extracted from the original delisted RunCat app (v12.8.0) */
+"aboutApp" = "关于 RunCat";
+"activityMonitor" = "活动监视器";
+"back" = "返回";
+"categoryAnimal" = "动物类跑者";
+"categoryDefault" = "默认跑者";
+"categoryInanimate" = "非生物类跑者";
+"categorySeasonal" = "季节限定跑者";
+"categorySelfMade" = "自制跑者";
+"categorySpecial" = "特殊颜色跑者";
+"contributeToApp" = "贡献 RunCat";
+"debugSleep" = "调试睡眠";
+"debugWakeUp" = "调试唤醒";
+"endlessGame" = "开始无尽游戏";
+"help" = "帮助";
+"helpFAQ" = "常见问题";
+"helpHowToAdd" = "如何自制跑者";
+"more" = "更多";
+"reportAnIssue" = "反馈问题";
+"runners" = "跑者";
+"selfMade" = "自制";
+"settings" = "设置";
+"store" = "商店";
+"terminateApp" = "退出 RunCat";

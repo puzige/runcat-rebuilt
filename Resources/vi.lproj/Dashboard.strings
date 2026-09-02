@@ -1,0 +1,24 @@
+/* Dashboard — extracted from the original delisted RunCat app (v12.8.0) */
+"aboutApp" = "Giới thiệu về RunCat";
+"activityMonitor" = "Giám sát hoạt động";
+"back" = "Quay lại";
+"categoryAnimal" = "Runners Loại Động Vật";
+"categoryDefault" = "Runners Mặc Định";
+"categoryInanimate" = "Runners Loại Vật Thể";
+"categorySeasonal" = "Runners Theo Mùa";
+"categorySelfMade" = "Runners Tự Tạo";
+"categorySpecial" = "Runners Màu Đặc Biệt";
+"contributeToApp" = "Góp phần cho RunCat";
+"debugSleep" = "Gỡ lỗi Chế Độ Ngủ";
+"debugWakeUp" = "Gỡ lỗi Đánh Thức";
+"endlessGame" = "Chơi Game Vô Hạn";
+"help" = "Trợ giúp";
+"helpFAQ" = "Câu Hỏi Thường Gặp";
+"helpHowToAdd" = "Cách đăng ký runner tự tạo";
+"more" = "Thêm";
+"reportAnIssue" = "Báo cáo sự cố";
+"runners" = "Runners";
+"selfMade" = "Tự Tạo";
+"settings" = "Cài Đặt";
+"store" = "Cửa Hàng";
+"terminateApp" = "Thoát RunCat";

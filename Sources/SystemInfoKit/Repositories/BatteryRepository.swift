@@ -1,0 +1,145 @@
+#if os(macOS)
+import Foundation
+import IOKit
+import IOKit.ps
+
+struct BatteryRepository: SystemRepository {
+    private var ioKitClient: IOKitClient
+    private var stateClient: StateClient
+    var language: Language
+
+    init(_ dependencies: Dependencies, language: Language) {
+        ioKitClient = dependencies.ioKitClient
+        stateClient = dependencies.stateClient
+        self.language = language
+    }
+
+    private func fetchIOServiceProperties(name: String) -> [String: AnyObject]? {
+        let service = ioKitClient.getMatchingService(kIOMainPortDefault, IOServiceNameMatching(name))
+        guard service != IO_OBJECT_NULL else {
+            return nil
+        }
+        defer {
+            _ = ioKitClient.release(service)
+        }
+        var props: Unmanaged<CFMutableDictionary>? = nil
+        guard ioKitClient.registryEntryCreateCFProperties(service, &props, kCFAllocatorDefault, .zero) == kIOReturnSuccess else {
+            return nil
+        }
+        return props?.takeRetainedValue() as? [String: AnyObject]
+    }
+
+    func update() async {
+        guard let batteryDict = fetchIOServiceProperties(name: "AppleSmartBattery"),
+              let installed = batteryDict["BatteryInstalled"] as? Int else {
+            return
+        }
+
+        var result = BatteryInfo(isInstalled: installed == 1, language: language)
+        defer {
+            stateClient.withLock { [result] in $0.bundle.batteryInfo = result }
+        }
+
+        if #available(macOS 27.0, *) {
+            if let batteryData = batteryDict["BatteryData"] as? [String: AnyObject] {
+                if let currentCapacity = batteryData["CurrentCapacity"] as? Double {
+                    result.percentage = .init(rawValue: currentCapacity / 100, width: 5, language: language)
+                }
+                if let fullChargeCapacity = batteryData["FullChargeCapacity"] as? Double,
+                   let designCapacity = batteryData["DesignCapacity"] as? Double {
+                    result.maxCapacity = .init(rawValue: min(fullChargeCapacity / designCapacity, 1), width: 5, language: language)
+                }
+            }
+            if let batteryPackDict = fetchIOServiceProperties(name: "AppleSmartBatteryPack"),
+                let batteryData = batteryPackDict["BatteryData"] as? [String: AnyObject],
+                let temperature = batteryData["Temperature"] as? Double {
+                result.temperature = .init(value: temperature / 100.0, language: language)
+            }
+        } else {
+            if let currentCapacity = batteryDict["CurrentCapacity"] as? Double,
+               let maxCapacity = batteryDict["MaxCapacity"] as? Double,
+               maxCapacity > 0 {
+                result.percentage = .init(rawValue: min(currentCapacity / maxCapacity, 1), width: 5, language: language)
+            }
+            if let rawMaxCapacity = batteryDict["AppleRawMaxCapacity"] as? Double,
+               let designCapacity = batteryDict["DesignCapacity"] as? Double,
+               designCapacity > 0 {
+                result.maxCapacity = .init(rawValue: min(rawMaxCapacity / designCapacity, 1), width: 5, language: language)
+            }
+            if let temperature = batteryDict["Temperature"] as? Double {
+                result.temperature = .init(value: temperature / 100.0, language: language)
+            }
+        }
+
+        if let isCharging = batteryDict["IsCharging"] as? Int {
+            result.isCharging = isCharging == 1
+        }
+        if (batteryDict["ExternalConnected"] as? Int) == 1 {
+            let adapter = batteryDict["AdapterDetails"] as? [String: AnyObject]
+            result.adapterName = if let name = adapter?["Name"] as? String {
+                name
+            } else if let watts = adapter?["Watts"] as? Int, watts > 0 {
+                string(localized: "batteryAdapter\(watts)")
+            } else {
+                string(localized: "batteryUnknown")
+            }
+        }
+        if let cycleCount = batteryDict["CycleCount"] as? Int {
+            result.cycleCount = cycleCount
+        }
+    }
+
+    func setInitial() {
+        stateClient.withLock {
+            $0.bundle.batteryInfo = .init(language: language)
+        }
+    }
+
+    func reset() {
+        stateClient.withLock {
+            $0.bundle.batteryInfo = nil
+        }
+    }
+}
+#elseif os(iOS)
+import UIKit
+
+struct BatteryRepository: SystemRepository {
+    private var stateClient: StateClient
+    private var uiDeviceClient: UIDeviceClient
+    var language: Language
+
+    init(_ dependencies: Dependencies, language: Language) {
+        stateClient = dependencies.stateClient
+        uiDeviceClient = dependencies.uiDeviceClient
+        self.language = language
+    }
+
+    func update() async {
+        await uiDeviceClient.setIsBatteryMonitoringEnabled(true)
+        
+        var result = BatteryInfo(language: language)
+        defer {
+            stateClient.withLock { [result] in $0.bundle.batteryInfo = result }
+        }
+
+        let batteryLevel = await uiDeviceClient.batteryLevel()
+        result.percentage = .init(rawValue: Double(batteryLevel), width: 5, language: language)
+
+        let batteryState = await uiDeviceClient.batteryState()
+        result.isCharging = [.charging, .full].contains(batteryState)
+    }
+
+    func setInitial() {
+        stateClient.withLock {
+            $0.bundle.batteryInfo = .init(language: language)
+        }
+    }
+
+    func reset() {
+        stateClient.withLock {
+            $0.bundle.batteryInfo = nil
+        }
+    }
+}
+#endif

@@ -1,0 +1,24 @@
+/* Dashboard — extracted from the original delisted RunCat app (v12.8.0) */
+"aboutApp" = "RunCat에 관하여";
+"activityMonitor" = "활성 상태 보기";
+"back" = "뒤로";
+"categoryAnimal" = "동물 러너";
+"categoryDefault" = "기본 러너";
+"categoryInanimate" = "무생물 러너";
+"categorySeasonal" = "계절한정 러너";
+"categorySelfMade" = "커스텀 러너";
+"categorySpecial" = "특별 컬러 러너";
+"contributeToApp" = "RunCat에 기여";
+"debugSleep" = "수면 디버깅";
+"debugWakeUp" = "각성 디버깅";
+"endlessGame" = "엔드리스 게임 시작";
+"help" = "도움말";
+"helpFAQ" = "자주 묻는 질문";
+"helpHowToAdd" = "직접 만든 커스텀 러너를 추가하는 방법";
+"more" = "더보기";
+"reportAnIssue" = "문제점 알리기";
+"runners" = "러너";
+"selfMade" = "러너 만들기";
+"settings" = "설정";
+"store" = "스토어";
+"terminateApp" = "RunCat 종료";

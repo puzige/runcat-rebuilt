@@ -1,0 +1,27 @@
+/* Generated from Localizable.xcstrings (SystemInfoKit, Apache-2.0 Kyome22) */
+"battery" = "电池";
+"battery%@" = "电池：%@";
+"batteryAdapter%lld" = "%lldW 电源适配器";
+"batteryCycle%lld" = "循环计数：%lld";
+"batteryIsNotInstalled" = "电池：未安装";
+"batteryMaxCapacity%@" = "最大容量：%@";
+"batteryPowerSource%@" = "电源：%@";
+"batteryTemperature%@" = "温度：%@";
+"batteryUnknown" = "未知";
+"cpu%@" = "CPU：%@";
+"cpuIdle%@" = "闲置：%@";
+"cpuSystem%@" = "系统：%@";
+"cpuUser%@" = "用户：%@";
+"memory%@" = "内存：%@";
+"memoryApp%@" = "App 内存：%@";
+"memoryCompressed%@" = "被压缩：%@";
+"memoryPressure%@" = "压力：%@";
+"memoryWired%@" = "联动内存：%@";
+"network%@" = "网络：%@";
+"networkCellular" = "蜂窝网络";
+"networkDownload%@" = "下载：%@/s";
+"networkLocalIP%@" = "本地 IP：%@";
+"networkNoConnection" = "未连接";
+"networkUnknown" = "未知";
+"networkUpload%@" = "上传：%@/s";
+"storage%@" = "储存：%@ 已使用";

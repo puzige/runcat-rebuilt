@@ -9,43 +9,46 @@
  Licensed under the Apache License, Version 2.0.
  Modified for the RunCat preservation rebuild, 2026:
  - Frame images are loaded from the app bundle's Resources directory
-   ("cat-page-0.png" ... "cat-page-4.png", extracted from the original
+   ("runners/<name>/page-N@1x.png", extracted from the original
    delisted App Store binary) instead of a compiled asset catalog.
- - The menu now includes a localized "About" window, a hint on how to
-   add the app as a login item from System Settings, and Quit.
+ - Left-clicking the status item now opens a dashboard popover
+   (SwiftUI in an NSHostingView) mirroring the original app, while the
+   right-click keeps a traditional NSMenu as a fallback.
+ - The selected runner is persisted in UserDefaults("selectedRunner")
+   and the frame loading is generalized to any runner.
 */
 
 import Cocoa
+import SwiftUI
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    private let model = DashboardModel()
     private lazy var statusItem: NSStatusItem = {
         return NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     }()
+    private let popover = NSPopover()
     private let menu = NSMenu()
-    private lazy var frames: [NSImage] = {
-        // Load the five animation frames straight from the main bundle's
-        // Resources directory. This avoids the asset-catalog compiler,
-        // which is not available with the Command Line Tools toolchain.
-        let resourceURL = Bundle.main.resourceURL
-        return (0 ..< 5).map { n in
-            let path = resourceURL?.appendingPathComponent("cat-page-\(n).png").path
-            guard let path = path, let image = NSImage(contentsOfFile: path) else {
-                return NSImage() // empty fallback keeps the timer loop alive
-            }
-            image.size = NSSize(width: 28, height: 18)
-            return image
-        }
-    }()
+    private var showUsageItem: NSMenuItem? = nil
+
+    private var frames: [NSImage] = []
     private var index: Int = 0
     private var interval: Double = 1.0
     private let cpu = CPU()
     private var usage: CPUInfo = CPU.default
     private var cpuTimer: Timer? = nil
     private var runnerTimer: Timer? = nil
-    private var isShowUsage: Bool = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        loadFrames(for: model.selectedRunnerID)
+        model.onRunnerChanged = { [weak self] runnerID in
+            self?.loadFrames(for: runnerID)
+        }
+        model.onShowUsageChanged = { [weak self] _ in
+            self?.updateUsageDescription()
+        }
+
         setupStatusItem()
+        setupPopover()
         setNotifications()
         startRunning()
     }
@@ -54,17 +57,109 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         stopRunning()
     }
 
+    // MARK: - Runner frames
+
+    /// Load all frames of a runner from Bundle.main's "runners/<id>/"
+    /// directory, normalized to the original menu bar size.
+    private func loadFrames(for runnerID: String) {
+        let target = NSSize(width: 28, height: 18)
+        frames = RunnerCatalog.runner(withID: runnerID).allFrames().map { source in
+            guard let tiff = source.tiffRepresentation,
+                  let rep = NSBitmapImageRep(data: tiff) else {
+                return source
+            }
+            let image = NSImage(size: target)
+            image.addRepresentation(rep)
+            return image
+        }
+        index = 0
+        statusItem.button?.image = frames.first
+    }
+
+    // MARK: - Status item
+
+    private func setupStatusItem() {
+        statusItem.button?.imagePosition = .imageTrailing
+        statusItem.button?.image = frames.first
+        if #available(macOS 10.15, *) {
+            statusItem.button?.font = NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
+        } else {
+            statusItem.button?.font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular)
+        }
+
+        // Left click: dashboard popover. Right click: traditional menu.
+        statusItem.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
+        statusItem.button?.action = #selector(statusItemClicked(_:))
+
+        showUsageItem = menu.addItem(withTitle: localizedString("menu.show_usage", fallback: "Show CPU Usage"),
+                                     action: #selector(toggleShowUsage(_:)),
+                                     keyEquivalent: "")
+        menu.addItem(NSMenuItem.separator())
+        menu.addItem(withTitle: localizedString("menu.about", fallback: "About RunCat"),
+                     action: #selector(openAbout(_:)),
+                     keyEquivalent: "")
+        menu.addItem(withTitle: localizedString("menu.login_item_hint", fallback: "Launch at Login…"),
+                     action: #selector(showLoginItemHint(_:)),
+                     keyEquivalent: "")
+        menu.addItem(NSMenuItem.separator())
+        menu.addItem(withTitle: localizedString("menu.quit", fallback: "Quit RunCat"),
+                     action: #selector(terminateApp(_:)),
+                     keyEquivalent: "q")
+        menu.delegate = self
+    }
+
+    @objc func statusItemClicked(_ sender: Any?) {
+        let event = NSApp.currentEvent
+        if event?.type == .rightMouseUp || event?.modifierFlags.contains(.control) == true {
+            statusItem.menu = menu
+            statusItem.button?.performClick(nil)
+            statusItem.menu = nil
+        } else {
+            togglePopover(sender)
+        }
+    }
+
+    // MARK: - Popover
+
+    private func setupPopover() {
+        popover.contentSize = NSSize(width: 396, height: 420)
+        popover.behavior = .transient
+        popover.contentViewController = NSHostingController(rootView: DashboardRootView(model: model))
+        NotificationCenter.default.addObserver(self, selector: #selector(popoverDidCloseNote(_:)),
+                                               name: NSPopover.didCloseNotification,
+                                               object: popover)
+    }
+
+    private func togglePopover(_ sender: Any?) {
+        guard let button = statusItem.button else { return }
+        if popover.isShown {
+            popover.close()
+        } else {
+            model.startMonitoring()
+            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        }
+    }
+
+    @objc func popoverDidCloseNote(_ notification: Notification) {
+        model.stopMonitoring()
+    }
+
+    // MARK: - Legacy menu actions
+
     private func updateUsageDescription() {
-        statusItem.button?.title = isShowUsage ? usage.description : ""
+        statusItem.button?.title = model.isShowUsage ? usage.description : ""
     }
 
     @objc func toggleShowUsage(_ sender: NSMenuItem) {
-        isShowUsage = (sender.state == .off)
-        sender.state = isShowUsage ? .on : .off
-        updateUsageDescription()
+        model.isShowUsage.toggle()
+        sender.state = model.isShowUsage ? .on : .off
     }
 
     @objc func openAbout(_ sender: Any?) {
+        Self.openAboutWindow()
+    }
+
+    static func openAboutWindow() {
         NSApp.activate(ignoringOtherApps: true)
         NSApp.orderFrontStandardAboutPanel(nil)
     }
@@ -97,32 +192,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return Bundle.main.localizedString(forKey: key, value: fallback, table: nil)
     }
 
-    private func setupStatusItem() {
-        statusItem.button?.imagePosition = .imageTrailing
-        statusItem.button?.image = frames.first
-        if #available(macOS 10.15, *) {
-            let font = NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
-            statusItem.button?.font = font
-        } else {
-            let font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular)
-            statusItem.button?.font = font
-        }
-        menu.addItem(withTitle: localizedString("menu.show_usage", fallback: "Show CPU Usage"),
-                     action: #selector(toggleShowUsage(_:)),
-                     keyEquivalent: "")
-        menu.addItem(NSMenuItem.separator())
-        menu.addItem(withTitle: localizedString("menu.about", fallback: "About RunCat"),
-                     action: #selector(openAbout(_:)),
-                     keyEquivalent: "")
-        menu.addItem(withTitle: localizedString("menu.login_item_hint", fallback: "Launch at Login…"),
-                     action: #selector(showLoginItemHint(_:)),
-                     keyEquivalent: "")
-        menu.addItem(NSMenuItem.separator())
-        menu.addItem(withTitle: localizedString("menu.quit", fallback: "Quit RunCat"),
-                     action: #selector(terminateApp(_:)),
-                     keyEquivalent: "q")
-        statusItem.menu = menu
-    }
+    // MARK: - Animation
 
     @objc func receiveSleep(_ notification: NSNotification) {
         stopRunning()
@@ -147,14 +217,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         usage = cpu.currentUsage()
         interval = 0.2 / max(1.0, min(20.0, self.usage.value / 5.0))
         updateUsageDescription()
+        restartRunnerTimer()
+    }
+
+    private func restartRunnerTimer() {
         runnerTimer?.invalidate()
-        runnerTimer = Timer(timeInterval: self.interval, repeats: true, block: { [weak self] _ in
+        runnerTimer = Timer(timeInterval: interval, repeats: true, block: { [weak self] _ in
             self?.next()
         })
         RunLoop.main.add(runnerTimer!, forMode: .common)
     }
 
     private func next() {
+        guard !frames.isEmpty else { return }
         index = (index + 1) % frames.count
         statusItem.button?.image = frames[index]
     }
@@ -170,5 +245,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func stopRunning() {
         runnerTimer?.invalidate()
         cpuTimer?.invalidate()
+    }
+}
+
+extension AppDelegate: NSMenuDelegate {
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        showUsageItem?.state = model.isShowUsage ? .on : .off
     }
 }

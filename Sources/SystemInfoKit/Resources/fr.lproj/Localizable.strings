@@ -1,0 +1,27 @@
+/* Generated from Localizable.xcstrings (SystemInfoKit, Apache-2.0 Kyome22) */
+"battery" = "Batterie";
+"battery%@" = "Batterie : %@";
+"batteryAdapter%lld" = "Adaptateur secteur %lld W";
+"batteryCycle%lld" = "Nombre de cycles : %lld";
+"batteryIsNotInstalled" = "Batterie : Non installé";
+"batteryMaxCapacity%@" = "Capacité max : %@";
+"batteryPowerSource%@" = "Source d’alimentation : %@";
+"batteryTemperature%@" = "Température : %@";
+"batteryUnknown" = "Inconnue";
+"cpu%@" = "CPU : %@";
+"cpuIdle%@" = "Inactif : %@";
+"cpuSystem%@" = "Système : %@";
+"cpuUser%@" = "Utilisateur : %@";
+"memory%@" = "Mémoire : %@";
+"memoryApp%@" = "Mémoire de l’app : %@";
+"memoryCompressed%@" = "Compressée : %@";
+"memoryPressure%@" = "Charge mémoire : %@";
+"memoryWired%@" = "Mémoire résidente : %@";
+"network%@" = "Réseau : %@";
+"networkCellular" = "Données cellulaires";
+"networkDownload%@" = "Réception : %@/s";
+"networkLocalIP%@" = "IP local : %@";
+"networkNoConnection" = "Aucune connexion";
+"networkUnknown" = "Inconnue";
+"networkUpload%@" = "Envoi : %@/s";
+"storage%@" = "Stockage : %@ utilisé";

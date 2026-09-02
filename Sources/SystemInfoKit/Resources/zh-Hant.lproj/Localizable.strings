@@ -1,0 +1,27 @@
+/* Generated from Localizable.xcstrings (SystemInfoKit, Apache-2.0 Kyome22) */
+"battery" = "電池";
+"battery%@" = "電池：%@";
+"batteryAdapter%lld" = "%lldW 電源轉接器";
+"batteryCycle%lld" = "循環次數：%lld";
+"batteryIsNotInstalled" = "電池：未安裝";
+"batteryMaxCapacity%@" = "最大容量：%@";
+"batteryPowerSource%@" = "電源：%@";
+"batteryTemperature%@" = "溫度：%@";
+"batteryUnknown" = "未知";
+"cpu%@" = "CPU：%@";
+"cpuIdle%@" = "閒置：%@";
+"cpuSystem%@" = "系統：%@";
+"cpuUser%@" = "使用者：%@";
+"memory%@" = "記憶體：%@";
+"memoryApp%@" = "App 記憶體：%@";
+"memoryCompressed%@" = "已壓縮：%@";
+"memoryPressure%@" = "壓力：%@";
+"memoryWired%@" = "系統核心記憶體：%@";
+"network%@" = "網路：%@";
+"networkCellular" = "行動網路";
+"networkDownload%@" = "下載：%@/s";
+"networkLocalIP%@" = "本地 IP：%@";
+"networkNoConnection" = "沒有連線";
+"networkUnknown" = "未知";
+"networkUpload%@" = "上傳：%@/s";
+"storage%@" = "儲存空間：%@已使用";

@@ -1,0 +1,27 @@
+/* Generated from Localizable.xcstrings (SystemInfoKit, Apache-2.0 Kyome22) */
+"battery" = "Батарея";
+"battery%@" = "Батарея: %@";
+"batteryAdapter%lld" = "Адаптер питания %lld Вт";
+"batteryCycle%lld" = "Количество циклов: %lld";
+"batteryIsNotInstalled" = "Батарея: Не установлена";
+"batteryMaxCapacity%@" = "Максимальная ёмкость: %@";
+"batteryPowerSource%@" = "Источник заряда: %@";
+"batteryTemperature%@" = "Температура: %@";
+"batteryUnknown" = "Неизвестно";
+"cpu%@" = "Процессор: %@";
+"cpuIdle%@" = "Свободно: %@";
+"cpuSystem%@" = "Система: %@";
+"cpuUser%@" = "Пользователь: %@";
+"memory%@" = "Память: %@";
+"memoryApp%@" = "Память приложения: %@";
+"memoryCompressed%@" = "Сжато: %@";
+"memoryPressure%@" = "Нагрузка: %@";
+"memoryWired%@" = "Зарезервированная память: %@";
+"network%@" = "Сеть: %@";
+"networkCellular" = "Сотовая";
+"networkDownload%@" = "Загрузка: %@/s";
+"networkLocalIP%@" = "Локальный IP: %@";
+"networkNoConnection" = "Нет соединения";
+"networkUnknown" = "Неизвестно";
+"networkUpload%@" = "Выгрузка: %@/s";
+"storage%@" = "Хранилище: %@ использовано";

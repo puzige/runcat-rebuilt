@@ -7,3 +7,6 @@
 "menu.login_item_hint.message" = "To launch RunCat automatically at login, open System Settings → General → Login Items and add RunCat there.";
 "menu.login_item_hint.open_settings" = "Open System Settings";
 "menu.login_item_hint.ok" = "OK";
+"settings.show_usage" = "Show CPU Usage";
+"store.unavailable" = "The Runner Store is not available in this rebuild (the original App Store service was delisted).";
+"selfmade.unavailable" = "Self-made runners are not available in this rebuild.";

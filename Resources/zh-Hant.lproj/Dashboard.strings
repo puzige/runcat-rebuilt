@@ -1,0 +1,24 @@
+/* Dashboard — extracted from the original delisted RunCat app (v12.8.0) */
+"aboutApp" = "關於 RunCat";
+"activityMonitor" = "活動監視器";
+"back" = "返回";
+"categoryAnimal" = "動物類跑者";
+"categoryDefault" = "預設跑者";
+"categoryInanimate" = "非生物類跑者";
+"categorySeasonal" = "季節限定跑者";
+"categorySelfMade" = "自製跑者";
+"categorySpecial" = "特殊色跑者";
+"contributeToApp" = "貢獻 RunCat";
+"debugSleep" = "偵錯睡眠";
+"debugWakeUp" = "偵錯喚醒";
+"endlessGame" = "玩無盡遊戲";
+"help" = "幫助";
+"helpFAQ" = "常見問題";
+"helpHowToAdd" = "如何添加自製跑者";
+"more" = "更多";
+"reportAnIssue" = "回報問題";
+"runners" = "跑者";
+"selfMade" = "自製";
+"settings" = "設定";
+"store" = "商店";
+"terminateApp" = "結束 RunCat";

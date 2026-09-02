@@ -1,0 +1,24 @@
+/* Dashboard — extracted from the original delisted RunCat app (v12.8.0) */
+"aboutApp" = "À propos de RunCat";
+"activityMonitor" = "Moniteur d’activité";
+"back" = "Précédent";
+"categoryAnimal" = "Coureurs Animaux";
+"categoryDefault" = "Coureurs par Défaut";
+"categoryInanimate" = "Coureurs Objets";
+"categorySeasonal" = "Coureurs de Saison";
+"categorySelfMade" = "Coureurs Personnalisés";
+"categorySpecial" = "Coureurs Édition Colorée";
+"contributeToApp" = "Améliorer RunCat";
+"debugSleep" = "Désactiver le mode débug";
+"debugWakeUp" = "Activer le mode débug";
+"endlessGame" = "Jouer au jeu infini";
+"help" = "Aide";
+"helpFAQ" = "Questions fréquentes";
+"helpHowToAdd" = "Comment créer ses coureurs personnalisés";
+"more" = "Plus";
+"reportAnIssue" = "Soumettre un problème";
+"runners" = "Coureurs";
+"selfMade" = "Personnalisé";
+"settings" = "Réglages";
+"store" = "Magasin";
+"terminateApp" = "Quitter RunCat";

@@ -1,0 +1,24 @@
+/* Dashboard — extracted from the original delisted RunCat app (v12.8.0) */
+"aboutApp" = "RunCatについて";
+"activityMonitor" = "ｱｸﾃｨﾋﾞﾃｨﾓﾆﾀ";
+"back" = "戻る";
+"categoryAnimal" = "生物系ランナー";
+"categoryDefault" = "デフォルトランナー";
+"categoryInanimate" = "非生物系ランナー";
+"categorySeasonal" = "季節のランナー";
+"categorySelfMade" = "自作ランナー";
+"categorySpecial" = "特別カラー版ランナー";
+"contributeToApp" = "RunCatに貢献";
+"debugSleep" = "スリープのデバッグ";
+"debugWakeUp" = "ウェイクアップのデバッグ";
+"endlessGame" = "エンドレスゲームで遊ぶ";
+"help" = "ヘルプ";
+"helpFAQ" = "よくある質問";
+"helpHowToAdd" = "自作ランナー追加方法";
+"more" = "その他";
+"reportAnIssue" = "不具合の報告";
+"runners" = "ランナー";
+"selfMade" = "自作ランナー";
+"settings" = "設定";
+"store" = "ストア";
+"terminateApp" = "RunCatを終了";

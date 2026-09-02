@@ -25,7 +25,8 @@ echo "==> [1/4] swift build -c release"
 cd "$REPO_ROOT"
 swift build -c release
 
-BINARY="$(swift build -c release --show-bin-path)/RunCat"
+BIN_PATH="$(swift build -c release --show-bin-path)"
+BINARY="$BIN_PATH/RunCat"
 if [ ! -x "$BINARY" ]; then
     echo "error: built binary not found at $BINARY" >&2
     exit 1
@@ -38,8 +39,47 @@ mkdir -p "$APP_BUNDLE/Contents/MacOS" "$APP_BUNDLE/Contents/Resources"
 cp "$BINARY" "$APP_BUNDLE/Contents/MacOS/$APP_NAME"
 cp "$PLIST"  "$APP_BUNDLE/Contents/Info.plist"
 
-# Animation frames: loaded at runtime from the bundle Resources
-# directory (see AppDelegate.swift) — no asset-catalog compiler needed.
+# Animation frames: the dashboard's runner picker loads every runner's
+# frames at runtime from Resources/runners/<name>/page-N@1x.png (see
+# RunnerCatalog.swift) — no asset-catalog compiler needed.
+if [ ! -d "$REPO_ROOT/assets/runners" ]; then
+    echo "error: $REPO_ROOT/assets/runners not found" >&2
+    exit 1
+fi
+mkdir -p "$APP_BUNDLE/Contents/Resources/runners"
+for runner_dir in "$REPO_ROOT"/assets/runners/*/; do
+    name="$(basename "$runner_dir")"
+    case "$name" in
+        # cat-sleep is a single bitmap, not an animated runner;
+        # all-runners/self-made are store placeholders, not runners.
+        cat-sleep|all-runners|self-made) continue ;;
+    esac
+    mkdir -p "$APP_BUNDLE/Contents/Resources/runners/$name"
+    # frames are named page-N@1x.png (copied verbatim); non-runner
+    # directories are skipped above, and the empty-dir cleanup below
+    # tolerates any leftover bitmap-only folder.
+    cp "$runner_dir"*.png "$APP_BUNDLE/Contents/Resources/runners/$name/" 2>/dev/null || true
+    # drop empty dirs for runners without frame files
+    if [ -z "$(ls -A "$APP_BUNDLE/Contents/Resources/runners/$name" 2>/dev/null)" ]; then
+        rmdir "$APP_BUNDLE/Contents/Resources/runners/$name"
+    fi
+done
+
+# SystemInfoKit resource bundle: SPM emits the vendored target's
+# localized strings as <Package>_<Target>.bundle — here
+# RunCat_SystemInfoKit.bundle — next to the binary. Bundle.module
+# looks it up in Contents/Resources at runtime (the exact name is
+# baked into the generated resource_bundle_accessor).
+SYSTEMINFO_BUNDLE="$BIN_PATH/RunCat_SystemInfoKit.bundle"
+if [ -d "$SYSTEMINFO_BUNDLE" ]; then
+    cp -R "$SYSTEMINFO_BUNDLE" "$APP_BUNDLE/Contents/Resources/"
+else
+    echo "error: RunCat_SystemInfoKit.bundle not found in $BIN_PATH" >&2
+    exit 1
+fi
+
+# Legacy cat frames: kept as a fallback (see AppDelegate.swift) —
+# no asset-catalog compiler needed.
 for n in 0 1 2 3 4; do
     cp "$REPO_ROOT/Resources/Assets.xcassets/cat-page-$n.imageset/cat-page-$n@1x.png" \
        "$APP_BUNDLE/Contents/Resources/cat-page-$n.png"

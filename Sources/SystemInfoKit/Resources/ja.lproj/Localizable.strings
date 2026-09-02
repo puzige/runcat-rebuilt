@@ -1,0 +1,27 @@
+/* Generated from Localizable.xcstrings (SystemInfoKit, Apache-2.0 Kyome22) */
+"battery" = "バッテリー";
+"battery%@" = "バッテリー：%@";
+"batteryAdapter%lld" = "%lldW電源アダプタ";
+"batteryCycle%lld" = "充放電回数：%lld";
+"batteryIsNotInstalled" = "バッテリー：非搭載";
+"batteryMaxCapacity%@" = "最大容量：%@";
+"batteryPowerSource%@" = "供給源：%@";
+"batteryTemperature%@" = "温度：%@";
+"batteryUnknown" = "不明";
+"cpu%@" = "CPU：%@";
+"cpuIdle%@" = "アイドル状態：%@";
+"cpuSystem%@" = "システム：%@";
+"cpuUser%@" = "ユーザ：%@";
+"memory%@" = "メモリ：%@";
+"memoryApp%@" = "アプリメモリ：%@";
+"memoryCompressed%@" = "圧縮：%@";
+"memoryPressure%@" = "プレッシャー：%@";
+"memoryWired%@" = "確保されているメモリ：%@";
+"network%@" = "ネットワーク：%@";
+"networkCellular" = "モバイル通信";
+"networkDownload%@" = "ダウンロード：%@/s";
+"networkLocalIP%@" = "ローカル IP：%@";
+"networkNoConnection" = "接続なし";
+"networkUnknown" = "不明";
+"networkUpload%@" = "アップロード：%@/s";
+"storage%@" = "ストレージ：%@ 使用中";

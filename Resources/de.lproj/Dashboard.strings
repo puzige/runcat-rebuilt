@@ -1,0 +1,24 @@
+/* Dashboard — extracted from the original delisted RunCat app (v12.8.0) */
+"aboutApp" = "Über RunCat";
+"activityMonitor" = "Aktivitätsanzeige";
+"back" = "Zurück";
+"categoryAnimal" = "Tierische Läufer";
+"categoryDefault" = "Standard Läufer";
+"categoryInanimate" = "Nicht-animierte Läufer";
+"categorySeasonal" = "Saisonale Läufer";
+"categorySelfMade" = "Selbsterstellte Läufer";
+"categorySpecial" = "Läufer in Sonderfarben";
+"contributeToApp" = "Zu RunCat beitragen";
+"debugSleep" = "Debug Ruhezustand";
+"debugWakeUp" = "Debug Weckfunktion";
+"endlessGame" = "Endlosspiel spielen";
+"help" = "Hilfe";
+"helpFAQ" = "Häufig gestellte Fragen";
+"helpHowToAdd" = "Wie man selbsterstellte Läufer hinzufügt";
+"more" = "Mehr";
+"reportAnIssue" = "Fehler melden";
+"runners" = "Läufer";
+"selfMade" = "Selbsterstellt";
+"settings" = "Einstellungen";
+"store" = "Store";
+"terminateApp" = "RunCat beenden";

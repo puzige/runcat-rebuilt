@@ -1,0 +1,27 @@
+/* Generated from Localizable.xcstrings (SystemInfoKit, Apache-2.0 Kyome22) */
+"battery" = "Pin";
+"battery%@" = "Pin: %@";
+"batteryAdapter%lld" = "Bộ tiếp hợp nguồn %lldW";
+"batteryCycle%lld" = "Số chu kỳ: %lld";
+"batteryIsNotInstalled" = "Pin: Chưa lắp";
+"batteryMaxCapacity%@" = "Dung lượng tối đa: %@";
+"batteryPowerSource%@" = "Nguồn điện: %@";
+"batteryTemperature%@" = "Nhiệt độ: %@";
+"batteryUnknown" = "Không xác định";
+"cpu%@" = "CPU: %@";
+"cpuIdle%@" = "Nhàn rỗi: %@";
+"cpuSystem%@" = "Hệ thống: %@";
+"cpuUser%@" = "Người dùng: %@";
+"memory%@" = "Bộ nhớ: %@";
+"memoryApp%@" = "Bộ nhớ ứng dụng: %@";
+"memoryCompressed%@" = "Đã nén: %@";
+"memoryPressure%@" = "Áp lực bộ nhớ: %@";
+"memoryWired%@" = "Bộ nhớ lõi hệ thống: %@";
+"network%@" = "Mạng: %@";
+"networkCellular" = "Di động";
+"networkDownload%@" = "Tải xuống: %@/s";
+"networkLocalIP%@" = "IP nội bộ: %@";
+"networkNoConnection" = "Không có kết nối";
+"networkUnknown" = "Không xác định";
+"networkUpload%@" = "Tải lên: %@/s";
+"storage%@" = "Bộ nhớ lưu trữ: %@ đã dùng";
