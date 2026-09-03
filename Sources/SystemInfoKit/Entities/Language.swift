@@ -41,10 +41,27 @@ enum Language {
     }
 
     var bundle: Bundle? {
-        if self != .automatic, let path = Bundle.module.path(forResource: locale.identifier, ofType: "lproj") {
-            Bundle(path: path)
+        // SwiftPM's generated Bundle.module accessor only looks beside
+        // Bundle.main.bundleURL.  That is correct for `swift run`, but a
+        // hand-assembled macOS application stores resource bundles in
+        // Contents/Resources.  Calling Bundle.module there traps before we
+        // can recover.  Resolve the package bundle explicitly so the same
+        // binary works both from SwiftPM and from RunCat.app.
+        let resources = Self.resourceBundle
+        if self != .automatic, let path = resources?.path(forResource: locale.identifier, ofType: "lproj") {
+            return Bundle(path: path)
         } else {
-            Bundle.module
+            return resources
         }
     }
+
+    private static let resourceBundle: Bundle? = {
+        let bundleName = "RunCat_SystemInfoKit"
+        let candidates = [
+            Bundle.main.resourceURL?.appendingPathComponent("\(bundleName).bundle"),
+            Bundle.main.bundleURL.appendingPathComponent("\(bundleName).bundle"),
+            Bundle.main.bundleURL.deletingLastPathComponent().appendingPathComponent("\(bundleName).bundle"),
+        ]
+        return candidates.compactMap { $0 }.compactMap(Bundle.init(url:)).first
+    }()
 }

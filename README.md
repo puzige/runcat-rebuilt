@@ -10,13 +10,21 @@
 - 资产：从下架前的 App Store 完整版（v12.8.0）二进制中提取（提取流程见 `scripts/extract-assets.md`）
 - 构建：纯 SwiftPM（`swift build`），只需 Command Line Tools，**不需要完整 Xcode**
 
-## 功能
+## 当前功能（0.3.0）
 
-- 菜单栏猫奔跑动画，帧率随 CPU 占用率变化（占用越高跑得越快）
-- 菜单可切换显示 CPU 占用百分比（默认显示）
-- About 面板、登录项设置指引（手动到 系统设置 → 通用 → 登录项 添加）、退出
-- 使用完整版 App Store 资产的猫帧（56x36 @1x）与原版应用图标
-- 中英文本地化菜单文案
+- Classic 12.8 同尺寸菜单栏仪表盘（292 × 440 pt）：CPU / 内存曲线、
+  存储条、电池与网络信息，以及原版尺寸的四按钮侧栏；Store 和尚未实现的
+  Self-Made 入口隐藏，剩余按钮从顶部连续排列、未使用空间留在底部
+- 菜单栏角色动画，帧率随 CPU 占用率变化；可反转速度、水平翻转、使用
+  系统强调色、停止动画或每 10 分钟随机切换
+- Classic 单列角色选择浮层，完整角色资产与原文本地化名称
+- 490 × 472 pt 独立设置窗口（General / System Info）
+- About、帮助、Activity Monitor、退出和右键后备菜单
+- 10 种语言的 Classic 原始界面文案
+
+这仍是分阶段复刻，不宣称整个 Classic 已经完成。Runners Store、Self-Made
+编辑器和完整 System Info Bar 尚未达到验收标准；逐项状态和证据见
+[`docs/CLASSIC-PARITY.md`](docs/CLASSIC-PARITY.md)。
 
 ## 仓库结构
 
@@ -39,7 +47,7 @@ runcat-rebuilt/
 │   ├── extract_car.swift      # 提取工具：Swift 动态派发版
 │   └── asset_list.txt         # Assets.car 的 rendition 清单留档
 ├── assets/
-│   ├── runners/<角色>/        # 525 张 PNG 全量留档，90+ 种角色 × 5 帧（page-0..4@1x）
+│   ├── runners/<角色>/        # 525 张 PNG：78 种动画角色 + 睡眠/商店占位资产
 │   └── icons/                 # 原版应用图标（AppIcon-large.png 为 1024x1024）
 ├── LICENSE                    # Apache-2.0（注明代码基于 menubar_runcat）
 └── README.md
@@ -57,20 +65,24 @@ open RunCat.app           # 运行（也可以拖进「应用程序」文件夹�
 `build.sh` 会：
 
 1. `swift build -c release` 编译 SPM 可执行文件；
-2. 手工组装 `RunCat.app`（二进制、Info.plist、5 张猫帧 PNG、
-   用 `sips`/`iconutil` 从原版 1024px 图标生成 `AppIcon.icns`、`.lproj` 文案）；
+2. 手工组装 `RunCat.app`（二进制、Info.plist、完整角色帧、SystemInfoKit
+   resource bundle、原始 `.lproj` 文案，并生成 `AppIcon.icns`）；
 3. ad-hoc 签名（`codesign --force --sign -`，无需证书）。
 
 日常开发也可以直接 `swift build && swift run`（注意：`swift run` 下
 `Bundle.main` 不是 .app bundle，菜单栏动画帧会缺失，仅供编译调试用；
 完整体验请用 `build.sh` 产物）。
 
-## 换角色（可选）
+## 验证
 
-默认角色是猫。`assets/runners/` 下有全部 90+ 种角色（如 `dragon`、
-`otter`、`rocket` 等）。想换角色时，把 `assets/runners/<角色>/page-0..4@1x.png`
-拷贝替换 `Resources/Assets.xcassets/cat-page-*.imageset/` 里的对应文件
-（重命名为 `cat-page-N@1x.png`）后重新 `build.sh` 即可。
+```bash
+./scripts/verify.sh
+```
+
+该门禁会从源码重建、验证签名与所有关键资源，并在本机启动 5 秒仪表盘
+预览来捕获运行期崩溃。单独运行
+`RunCat.app/Contents/MacOS/RunCat --preview-dashboard` 可以在不点击菜单栏的
+情况下打开与真实弹窗相同材质、相同尺寸的视觉回归预览。
 
 ## 版权与使用边界（重要）
 

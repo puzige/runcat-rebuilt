@@ -30,12 +30,15 @@ struct BatteryRepository: SystemRepository {
     }
 
     func update() async {
-        guard let batteryDict = fetchIOServiceProperties(name: "AppleSmartBattery"),
-              let installed = batteryDict["BatteryInstalled"] as? Int else {
+        guard let batteryDict = fetchIOServiceProperties(name: "AppleSmartBattery") else {
+            stateClient.withLock {
+                $0.bundle.batteryInfo = .init(language: language)
+            }
             return
         }
 
-        var result = BatteryInfo(isInstalled: installed == 1, language: language)
+        let installed = (batteryDict["BatteryInstalled"] as? NSNumber)?.boolValue ?? false
+        var result = BatteryInfo(isInstalled: installed, language: language)
         defer {
             stateClient.withLock { [result] in $0.bundle.batteryInfo = result }
         }

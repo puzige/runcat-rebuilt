@@ -91,6 +91,13 @@ public final class SystemInfoObserver: Sendable {
             let repository = type.repositoryType.init(dependencies, language: language)
             if dependencies.stateClient.withLock(\.activationState[type]) ?? false {
                 await repository.update()
+                // A setting can be disabled while an asynchronous repository
+                // update is in flight. Re-check before publishing so that the
+                // completed update cannot resurrect a section the user just
+                // switched off.
+                if !(dependencies.stateClient.withLock(\.activationState[type]) ?? false) {
+                    repository.reset()
+                }
             } else {
                 repository.reset()
             }

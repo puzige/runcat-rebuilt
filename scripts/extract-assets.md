@@ -6,7 +6,7 @@
 
 ## 背景
 
-RunCat 完整版的奔跑角色动画（猫、龙、鸟、寿司等 90+ 种）打包在
+RunCat 完整版的奔跑角色动画（猫、龙、鸟、寿司等 78 种）打包在
 
 ```
 RunCat.app/Contents/Resources/Assets.car
@@ -82,7 +82,8 @@ swift extract_car.swift RunCat.app/Contents/Resources/Assets.car out-dir
 - 输出 525 张 PNG（部分 rendition 导出失败属正常：`ZZZZ` 打包组、
   非 RNA 格式项等），命名 `名字@倍率x.png`，例如 `cat-page-0@1x.png`。
 - 绝大多数资产只有 @1x；帧图尺寸如猫为 56x36 px。
-- 覆盖 90+ 种奔跑角色，每个角色 page-0 到 page-4 五帧。
+- 覆盖 78 种奔跑角色，帧数因角色而异（常见为 5 帧，最多 16 帧）；
+  另有 `cat-sleep` 和商店/自制占位资产。
 - 1024x1024 原版应用图标 `AppIcon-large.png` 从 App Icon rendition
   （`iconImageWithName:...`）导出。
 

@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build RunCat.app
-        run: ./scripts/build.sh
+        run: ./scripts/verify.sh
 
       - name: Verify codesign
         run: codesign --verify --deep --strict RunCat.app
@@ -37,7 +37,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build RunCat.app
-        run: ./scripts/build.sh
+        run: ./scripts/verify.sh
 
       - name: Zip app bundle
         run: ditto -c -k --sequesterRsrc --keepParent RunCat.app "RunCat-${{ github.ref_name }}.zip"

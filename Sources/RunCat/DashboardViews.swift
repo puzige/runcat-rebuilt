@@ -8,12 +8,14 @@
  Licensed under the Apache License, Version 2.0.
  Modified for the RunCat preservation rebuild, 2026.
 
- SwiftUI content of the menu bar popover: a dashboard that mirrors the
- delisted Mac App Store version of RunCat — system info sections on the
- left (CPU / Memory / Storage / Network with progress bars), a column of
- round buttons on the right (Runners / Store / Self-Made / Activity
- Monitor / Settings / More). Layout and copy follow the original; the
- graphs of the original are replaced by plain ProgressViews.
+ SwiftUI content of the menu bar popover.  The 292 x 440 point geometry,
+ 196 point system card, action-cell styling, graphs and spacing are measured
+ from the Classic 12.8 Retina reference capture; the More page contracts to
+ its measured 292 x 216 point content height. After consolidating Store
+ into Runners and hiding the unavailable Self-Made editor, the remaining four
+ action cells keep the original 72 x 64 point size, remain top-packed, and leave
+ the unused space at the bottom. The system-info views intentionally share the
+ open-source RunCat Neo implementation as its Apache-2.0 successor.
 */
 
 import SwiftUI
@@ -30,10 +32,10 @@ struct DashboardRootView: View {
             case .dashboard: DashboardView(model: model)
             case .runners: RunnerPickerView(model: model)
             case .settings: SettingsView(model: model)
+            case .more: MoreView(model: model)
             }
         }
-        .frame(width: 380)
-        .padding(8)
+        .frame(width: model.page.canvasSize.width, height: model.page.canvasSize.height)
     }
 }
 
@@ -42,40 +44,19 @@ struct DashboardRootView: View {
 private struct DashboardView: View {
     @ObservedObject var model: DashboardModel
 
-    private var appName: String {
-        (Bundle.main.infoDictionary?["CFBundleName"] as? String) ?? "RunCat"
-    }
-
     var body: some View {
-        VStack(spacing: 8) {
-            HStack {
-                Text(verbatim: appName)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.secondary)
-                    .padding(.leading, 8)
-                Spacer()
-                HStack(spacing: 4) {
-                    Menu {
-                        Button(DashboardView.string("aboutApp")) { AppDelegate.openAboutWindow() }
-                        Button(DashboardView.string("terminateApp")) { NSApp.terminate(nil) }
-                    } label: {
-                        Image(systemName: "ellipsis")
-                            .font(.system(size: 12, weight: .medium))
-                            .frame(width: 26, height: 24)
-                    }
-                    .menuStyle(.borderlessButton)
-                    .menuIndicator(.hidden)
-                    .fixedSize()
-                    .help(DashboardView.string("more"))
-                }
-            }
-            SystemInfoStackView(bundle: model.systemInfo)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color(nsColor: .unemphasizedSelectedContentBackgroundColor))
-                )
+        HStack(spacing: 8) {
+            SystemInfoStackView(
+                bundle: model.systemInfo,
+                cpuHistory: model.cpuHistory,
+                memoryHistory: model.memoryHistory,
+                selection: model.monitoringSelection
+            )
+            .frame(width: 196, height: 424, alignment: .topLeading)
+            .classicCellStyle(cornerRadius: 8)
             ButtonBar(model: model)
         }
+        .padding(8)
     }
 
     static func string(_ key: String, table: String? = "Dashboard") -> String {
@@ -87,32 +68,43 @@ private struct DashboardView: View {
 
 private struct SystemInfoStackView: View {
     var bundle: SystemInfoBundle
+    var cpuHistory: [Double]
+    var memoryHistory: [Double]
+    var selection: DashboardMonitoringSelection
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if let cpuInfo = bundle.cpuInfo {
-                SystemInfoSectionView(icon: "cpu", summary: cpuInfo.summary, details: cpuInfo.details) {
-                    ProgressView(value: cpuInfo.percentage.value, total: 100)
-                        .progressViewStyle(.linear)
+                SystemInfoSectionView(icon: cpuInfo.icon, summary: cpuInfo.summary, details: cpuInfo.details) {
+                    LineGraphView(values: cpuHistory)
                 }
             }
-            if let memoryInfo = bundle.memoryInfo {
+            if selection.memory, let memoryInfo = bundle.memoryInfo {
                 divider
-                SystemInfoSectionView(icon: "memorychip", summary: memoryInfo.summary, details: memoryInfo.details) {
-                    ProgressView(value: memoryInfo.percentage.value, total: 100)
-                        .progressViewStyle(.linear)
+                SystemInfoSectionView(icon: memoryInfo.icon, summary: memoryInfo.summary, details: memoryInfo.details) {
+                    EmptyView()
                 }
             }
-            if let storageInfo = bundle.storageInfo {
+            if selection.storage, let storageInfo = bundle.storageInfo {
                 divider
-                SystemInfoSectionView(icon: "externaldrive", summary: storageInfo.summary, details: storageInfo.details) {
-                    ProgressView(value: storageInfo.percentage.value, total: 100)
-                        .progressViewStyle(.linear)
+                SystemInfoSectionView(icon: storageInfo.icon, summary: storageInfo.summary, details: storageInfo.details) {
+                    BarGraphView(value: storageInfo.percentage.value)
                 }
             }
-            if let networkInfo = bundle.networkInfo {
+            if selection.battery {
+                let batteryInfo = bundle.batteryInfo ?? .zero
                 divider
-                SystemInfoSectionView(icon: "globe", summary: networkInfo.summary, details: networkInfo.details) {
+                SystemInfoSectionView(
+                    icon: batteryInfo.icon,
+                    summary: batteryInfo.summary,
+                    details: batteryInfo.isInstalled ? batteryInfo.details : []
+                ) {
+                    EmptyView()
+                }
+            }
+            if selection.network, let networkInfo = bundle.networkInfo {
+                divider
+                SystemInfoSectionView(icon: networkInfo.icon, summary: networkInfo.summary, details: networkInfo.details) {
                     EmptyView()
                 }
             }
@@ -149,8 +141,46 @@ private struct SystemInfoSectionView<Accessory: View>: View {
                 .padding(.leading, 12)
             }
         }
-        .font(.system(size: 13))
+        .fixedSize()
+        .padding(.leading, 8)
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct LineGraphView: View {
+    var values: [Double]
+
+    var body: some View {
+        Path { path in
+            path.move(to: CGPoint(x: 0, y: 16))
+            for (offset, value) in values.prefix(61).enumerated() {
+                let clamped = min(100, max(2, value))
+                path.addLine(to: CGPoint(
+                    x: CGFloat(2) * CGFloat(offset),
+                    y: CGFloat(16) - CGFloat(0.16 * clamped)
+                ))
+            }
+            path.addLine(to: CGPoint(x: 120, y: 16))
+            path.closeSubpath()
+        }
+        .fill(Color.accentColor)
+        .frame(width: 120, height: 16)
+    }
+}
+
+private struct BarGraphView: View {
+    var value: Double
+
+    var body: some View {
+        Rectangle()
+            .frame(width: 120, height: 8)
+            .foregroundStyle(Color.clear)
+            .border(Color.accentColor, width: 0.5)
+            .overlay(alignment: .leading) {
+                Rectangle()
+                    .frame(width: 1.2 * min(100, max(0, value)), height: 8)
+                    .foregroundStyle(Color.accentColor)
+            }
     }
 }
 
@@ -160,19 +190,34 @@ private struct ButtonBar: View {
     @ObservedObject var model: DashboardModel
 
     var body: some View {
-        HStack(spacing: 6) {
-            RoundButton(icon: "pawprint", title: DashboardView.string("runners")) {
-                model.page = .runners
+        VStack(spacing: 8) {
+            // The picker contains both built-in and former Store runners.
+            ClassicActionButton(icon: "pawprint", title: DashboardView.string("runners")) {
+                model.isRunnerListPresented.toggle()
             }
-            RoundButton(icon: "cart", title: DashboardView.string("store"), disabledReason: DashboardView.string("store.unavailable", table: nil)) {}
-            RoundButton(icon: "square.and.pencil", title: DashboardView.string("selfMade"), disabledReason: DashboardView.string("selfmade.unavailable", table: nil)) {}
-            RoundButton(icon: "gauge", title: DashboardView.string("activityMonitor")) {
+            .popover(isPresented: $model.isRunnerListPresented, arrowEdge: .trailing) {
+                RunnerPickerView(model: model)
+            }
+            ClassicActionButton(
+                icon: "waveform.path.ecg",
+                title: DashboardView.string("activityMonitor"),
+                iconSize: 23,
+                compactTitle: true
+            ) {
                 openActivityMonitor()
             }
-            RoundButton(icon: "gearshape", title: DashboardView.string("settings")) {
-                model.page = .settings
+            ClassicActionButton(icon: "gear", title: DashboardView.string("settings")) {
+                AppDelegate.showSettingsWindow()
+            }
+            ClassicActionButton(
+                icon: "ellipsis",
+                title: DashboardView.string("more"),
+                iconSize: 26
+            ) {
+                model.page = .more
             }
         }
+        .frame(height: 424, alignment: .top)
     }
 
     private func openActivityMonitor() {
@@ -180,28 +225,64 @@ private struct ButtonBar: View {
     }
 }
 
-private struct RoundButton: View {
+private struct ClassicActionButton: View {
     var icon: String
     var title: String
-    var disabledReason: String? = nil
+    var iconSize: CGFloat = 22
+    var compactTitle = false
+    var usesBundledIcon = false
     var action: () -> Void
 
     var body: some View {
         Button(action: action) {
             VStack(spacing: 2) {
-                Image(systemName: icon)
-                    .font(.system(size: 14))
-                    .frame(height: 16)
+                Group {
+                    if usesBundledIcon,
+                       let url = Bundle.main.url(forResource: "self-made@2x", withExtension: "png"),
+                       let image = NSImage(contentsOf: url) {
+                        Image(nsImage: image)
+                            .resizable()
+                            .renderingMode(.template)
+                            .scaledToFit()
+                            .frame(width: 27, height: 24)
+                    } else {
+                        Image(systemName: icon)
+                            .font(.system(size: iconSize, weight: .regular))
+                    }
+                }
+                .frame(height: 26)
                 Text(verbatim: title)
-                    .font(.system(size: 9))
+                    .font(.system(size: compactTitle ? 8 : 10.5, weight: .medium))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                    .minimumScaleFactor(0.8)
             }
-            .frame(width: 60, height: 44)
+            .frame(width: 72, height: 64)
+            .contentShape(Rectangle())
         }
-        .buttonStyle(.bordered)
-        .disabled(disabledReason != nil)
-        .help(disabledReason ?? title)
+        .buttonStyle(.plain)
+        .classicCellStyle(cornerRadius: 8)
+        .help(title)
+    }
+}
+
+private struct ClassicCellModifier: ViewModifier {
+    let cornerRadius: CGFloat
+
+    func body(content: Content) -> some View {
+        content
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius))
+            .overlay {
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1)
+            }
+            .compositingGroup()
+            .shadow(radius: 2, y: 2)
+    }
+}
+
+private extension View {
+    func classicCellStyle(cornerRadius: CGFloat) -> some View {
+        modifier(ClassicCellModifier(cornerRadius: cornerRadius))
     }
 }
 
@@ -211,40 +292,33 @@ struct RunnerPickerView: View {
     @ObservedObject var model: DashboardModel
 
     var body: some View {
-        VStack(spacing: 8) {
-            HStack(spacing: 8) {
-                Button {
-                    model.page = .dashboard
-                } label: {
-                    Label(DashboardView.string("back"), systemImage: "chevron.backward")
-                        .font(.system(size: 12))
-                }
-                .buttonStyle(.borderless)
-                Spacer()
-            }
-            ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    ForEach(RunnerCatalog.groupedByCategory(), id: \.0.rawValue) { category, runners in
-                        Text(verbatim: RunnerPickerView.string(category.rawValue))
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(.secondary)
-                            .padding(.leading, 4)
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 72), spacing: 8)], spacing: 8) {
-                            ForEach(runners) { runner in
-                                RunnerCellView(
-                                    runner: runner,
-                                    isSelected: runner.id == model.selectedRunnerID
-                                ) {
-                                    model.selectedRunnerID = runner.id
-                                }
-                            }
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                ForEach(RunnerCatalog.groupedByCategory(), id: \.0.rawValue) { category, runners in
+                    Text(verbatim: RunnerPickerView.string(category.rawValue))
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 8)
+                        .padding(.top, 8)
+                        .padding(.bottom, 4)
+                    ForEach(runners) { runner in
+                        RunnerRowView(
+                            runner: runner,
+                            isSelected: runner.id == model.selectedRunnerID
+                        ) {
+                            model.selectedRunnerID = runner.id
+                            model.isRunnerListPresented = false
+                        }
+                        if runner.id != runners.last?.id {
+                            Divider().padding(.leading, 16)
                         }
                     }
                 }
-                .padding(4)
             }
         }
-        .padding(4)
+        .frame(width: 196, height: 360)
+        .classicCellStyle(cornerRadius: 8)
+        .padding(8)
     }
 
     static func string(_ key: String) -> String {
@@ -252,43 +326,112 @@ struct RunnerPickerView: View {
     }
 }
 
-private struct RunnerCellView: View {
+private struct RunnerRowView: View {
     var runner: Runner
     var isSelected: Bool
     var action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 4) {
-                Group {
-                    if let image = runner.frame(at: 0) {
-                        Image(nsImage: image)
-                            .resizable()
-                            .scaledToFit()
-                    } else {
-                        Image(systemName: "pawprint")
-                    }
-                }
-                .frame(width: 40, height: 28)
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(isSelected ? Color.accentColor : Color.clear)
+                    .frame(width: 7, height: 7)
                 Text(verbatim: runner.displayName)
-                    .font(.system(size: 9))
+                    .font(.system(size: 13))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.6)
+                Spacer(minLength: 4)
+                if let image = runner.thumbnail() {
+                    Image(nsImage: image)
+                        .frame(width: 50, height: 18)
+                } else {
+                    Image(systemName: "pawprint")
+                        .frame(width: 50, height: 18)
+                }
             }
-            .frame(width: 68, height: 52)
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(isSelected
-                          ? Color.accentColor.opacity(0.25)
-                          : Color(nsColor: .unemphasizedSelectedContentBackgroundColor))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 6)
-                    .strokeBorder(isSelected ? Color.accentColor : .clear, lineWidth: 1.5)
-            )
+            .padding(.horizontal, 8)
+            .frame(height: 38)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .help(runner.displayName)
+    }
+}
+
+// MARK: - More
+
+private struct MoreView: View {
+    @ObservedObject var model: DashboardModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button {
+                model.page = .dashboard
+            } label: {
+                HStack(spacing: 7) {
+                    Image(systemName: "chevron.backward")
+                        .font(.system(size: 15, weight: .regular))
+                    Text(verbatim: DashboardView.string("back"))
+                        .font(.system(size: 14))
+                }
+                .foregroundStyle(.secondary)
+                .padding(.leading, 8)
+                .frame(width: 292, height: 40, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            VStack(spacing: 0) {
+                MoreActionRow(icon: "info", title: DashboardView.string("aboutApp")) {
+                    AppDelegate.openAboutWindow()
+                }
+                MoreActionRow(icon: "lightbulb", title: DashboardView.string("help")) {
+                    AppDelegate.openHelpPage()
+                }
+                MoreActionRow(icon: "envelope", title: DashboardView.string("reportAnIssue")) {
+                    AppDelegate.reportIssue()
+                }
+                MoreActionRow(icon: "hand.wave", title: DashboardView.string("terminateApp")) {
+                    NSApp.terminate(nil)
+                }
+            }
+            .frame(width: 276, height: 168)
+            .classicCellStyle(cornerRadius: 8)
+            .padding(.horizontal, 8)
+
+            Spacer(minLength: 0)
+        }
+        .frame(width: 292, height: 216, alignment: .topLeading)
+    }
+}
+
+private struct MoreActionRow: View {
+    let icon: String
+    let title: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                ZStack {
+                    Circle()
+                        .fill(Color.secondary.opacity(0.22))
+                    Image(systemName: icon)
+                        .font(.system(size: 15, weight: .regular))
+                        .foregroundStyle(.secondary)
+                }
+                .frame(width: 28, height: 28)
+
+                Text(verbatim: title)
+                    .font(.system(size: 14))
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 8)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .frame(height: 42)
     }
 }
 
@@ -296,47 +439,346 @@ private struct RunnerCellView: View {
 
 struct SettingsView: View {
     @ObservedObject var model: DashboardModel
+    @State private var selectedTab: Int
 
-    var body: some View {
-        VStack(spacing: 12) {
-            HStack(spacing: 8) {
-                Button {
-                    model.page = .dashboard
-                } label: {
-                    Label(DashboardView.string("back"), systemImage: "chevron.backward")
-                        .font(.system(size: 12))
-                }
-                .buttonStyle(.borderless)
-                Spacer()
-            }
-            Toggle(isOn: $model.isShowUsage) {
-                Text(verbatim: SettingsView.string("menu.show_usage"))
-                    .font(.system(size: 13))
-            }
-            .toggleStyle(.switch)
-            Divider()
-            Button {
-                AppDelegate.openAboutWindow()
-            } label: {
-                Label(DashboardView.string("aboutApp"), systemImage: "info.circle")
-                    .font(.system(size: 13))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .buttonStyle(.borderless)
-            Button {
-                NSApp.terminate(nil)
-            } label: {
-                Label(DashboardView.string("terminateApp"), systemImage: "power")
-                    .font(.system(size: 13))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .buttonStyle(.borderless)
-            Spacer()
-        }
-        .padding(4)
+    init(model: DashboardModel) {
+        self.model = model
+        _selectedTab = State(initialValue: ProcessInfo.processInfo.arguments.contains("--preview-system-info-settings") ? 1 : 0)
     }
 
-    static func string(_ key: String) -> String {
-        Bundle.main.localizedString(forKey: key, value: key, table: nil)
+    var body: some View {
+        TabView(selection: $selectedTab) {
+            ClassicGeneralSettingsView(model: model)
+                .tabItem {
+                    Label {
+                        Text(verbatim: Self.string("generalTab", table: "Others"))
+                    } icon: {
+                        Image(systemName: "gear")
+                    }
+                }
+                .tag(0)
+
+            ClassicSystemInfoSettingsView(model: model)
+                .tabItem {
+                    Label {
+                        Text(verbatim: Self.string("systemInfoTab", table: "Others"))
+                    } icon: {
+                        Image(systemName: "cpu")
+                    }
+                }
+                .tag(1)
+        }
+        .frame(width: 490, height: 444)
+        .background {
+            SettingsWindowTitleUpdater(
+                title: Self.string(selectedTab == 0 ? "generalTab" : "systemInfoTab", table: "Others")
+            )
+        }
+    }
+
+    static func string(_ key: String, table: String = "GeneralSettings") -> String {
+        Bundle.main.localizedString(forKey: key, value: key, table: table)
+    }
+}
+
+private struct SettingsWindowTitleUpdater: NSViewRepresentable {
+    let title: String
+
+    func makeNSView(context: Context) -> NSView {
+        NSView(frame: .zero)
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        DispatchQueue.main.async { [weak nsView] in
+            nsView?.window?.title = title
+        }
+    }
+}
+
+private struct GeneralSettingsView: View {
+    @ObservedObject var model: DashboardModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(SettingsView.string("runner"))
+                .font(.system(size: 13, weight: .semibold))
+                .padding(.leading, 23)
+                .padding(.top, 10)
+
+            VStack(spacing: 0) {
+                CenteredSettingsToggle(SettingsView.string("invertSpeed"), isOn: $model.invertSpeed)
+                    .frame(height: 43)
+                settingsDivider
+                CenteredSettingsToggle(SettingsView.string("flipHorizontally"), isOn: $model.flipHorizontally)
+                    .frame(height: 38)
+                settingsDivider
+                CenteredSettingsToggle(SettingsView.string("useAccentColor"), isOn: $model.useAccentColor)
+                    .frame(height: 38)
+                settingsDivider
+                VStack(spacing: 0) {
+                    CenteredSettingsToggle(SettingsView.string("selectAutomatically"), isOn: $model.selectAutomatically)
+                        .frame(height: 39)
+                    Picker("", selection: $model.onlyMonochromeRunners) {
+                        Text(SettingsView.string("allRunners")).tag(false)
+                        Text(SettingsView.string("onlyMonochromeRunners")).tag(true)
+                    }
+                    .pickerStyle(.radioGroup)
+                    .labelsHidden()
+                    .disabled(!model.selectAutomatically)
+                    .controlSize(.regular)
+                    .frame(width: 250, height: 43, alignment: .topLeading)
+                }
+                .frame(height: 82)
+                settingsDivider
+                CenteredSettingsToggle(SettingsView.string("stopRunner"), isOn: $model.stopRunner)
+                    .frame(height: 43)
+            }
+            .frame(width: 444, height: 248)
+            .classicSettingsPanel()
+            .padding(.leading, 23)
+            .padding(.top, 20)
+
+            Text(SettingsView.string("launch"))
+                .font(.system(size: 13, weight: .semibold))
+                .padding(.leading, 23)
+                .padding(.top, 20)
+
+            CenteredSettingsToggle(SettingsView.string("launchAtLogin"), isOn: $model.launchAtLogin)
+                .frame(width: 300, height: 48)
+                .classicSettingsPanel()
+                .padding(.leading, 23)
+                .padding(.top, 20)
+
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    private var settingsDivider: some View {
+        Divider().padding(.horizontal, 5)
+    }
+}
+
+private struct CenteredSettingsToggle: View {
+    let title: String
+    @Binding var isOn: Bool
+
+    init(_ title: String, isOn: Binding<Bool>) {
+        self.title = title
+        _isOn = isOn
+    }
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Text(verbatim: title)
+                .font(.system(size: 14))
+            Toggle("", isOn: $isOn)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.large)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+    }
+}
+
+private struct ClassicSettingsPanelModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .background {
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(Color(nsColor: .classicSettingsPanelBackground))
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 6)
+                    .strokeBorder(Color(nsColor: .separatorColor).opacity(0.55), lineWidth: 0.5)
+            }
+    }
+}
+
+private extension NSColor {
+    static let classicSettingsPanelBackground = NSColor(name: nil) { appearance in
+        if appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua {
+            return .controlBackgroundColor
+        }
+        return NSColor(srgbRed: 223 / 255, green: 222 / 255, blue: 222 / 255, alpha: 1)
+    }
+}
+
+private extension View {
+    func classicSettingsPanel() -> some View {
+        modifier(ClassicSettingsPanelModifier())
+    }
+}
+
+private struct SystemInfoSettingsView: View {
+    @ObservedObject var model: DashboardModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(SettingsView.string("systemInfoBar", table: "SystemInfoSettings"))
+                .font(.system(size: 13, weight: .semibold))
+                .padding(.top, 23)
+
+            CenteredSettingsToggle(
+                SettingsView.string("activate", table: "SystemInfoSettings"),
+                isOn: $model.isShowUsage
+            )
+            .frame(width: 122, height: 48)
+            .classicSettingsPanel()
+            .padding(.top, 20)
+
+            Text(SettingsView.string("monitoring", table: "SystemInfoSettings"))
+                .font(.system(size: 13, weight: .semibold))
+                .padding(.top, 20)
+
+            VStack(alignment: .leading, spacing: 0) {
+                Text(SettingsView.string("memoryPerformance", table: "SystemInfoSettings"))
+                    .frame(height: 38)
+                Divider()
+                Text(SettingsView.string("storageCapacity", table: "SystemInfoSettings"))
+                    .frame(height: 36)
+                Divider()
+                Text(SettingsView.string("networkConnection", table: "SystemInfoSettings"))
+                    .frame(height: 38)
+            }
+            .font(.system(size: 14))
+            .padding(.horizontal, 13)
+            .frame(width: 450, height: 116, alignment: .leading)
+            .classicSettingsPanel()
+            .padding(.top, 20)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 20)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+}
+
+// MARK: - Classic settings baseline
+
+private struct ClassicGeneralSettingsView: View {
+    @ObservedObject var model: DashboardModel
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            Text(SettingsView.string("runner"))
+                .font(.headline)
+                .offset(x: 30, y: 26.5)
+            GroupBox {
+                VStack(spacing: 0) {
+                    ClassicSettingsToggleRow(
+                        SettingsView.string("invertSpeed"),
+                        isOn: $model.invertSpeed,
+                        height: 32
+                    )
+                    Divider()
+                    ClassicSettingsToggleRow(SettingsView.string("flipHorizontally"), isOn: $model.flipHorizontally)
+                    Divider()
+                    ClassicSettingsToggleRow(SettingsView.string("useAccentColor"), isOn: $model.useAccentColor)
+                    Divider()
+                    ClassicSettingsToggleRow(SettingsView.string("selectAutomatically"), isOn: $model.selectAutomatically)
+                    Picker("", selection: $model.onlyMonochromeRunners) {
+                        Text(SettingsView.string("allRunners")).tag(false)
+                        Text(SettingsView.string("onlyMonochromeRunners")).tag(true)
+                    }
+                    .pickerStyle(.radioGroup)
+                    .labelsHidden()
+                    .disabled(!model.selectAutomatically)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 5)
+                    .padding(.bottom, 8)
+                    Divider()
+                    ClassicSettingsToggleRow(
+                        SettingsView.string("stopRunner"),
+                        isOn: $model.stopRunner,
+                        height: 32
+                    )
+                }
+            }
+            .frame(width: 450, height: 233)
+            .offset(x: 20, y: 57.5)
+
+            Text(SettingsView.string("launch"))
+                .font(.headline)
+                .offset(x: 30, y: 316.5)
+            GroupBox {
+                ClassicSettingsToggleRow(
+                    SettingsView.string("launchAtLogin"),
+                    isOn: $model.launchAtLogin,
+                    height: 27
+                )
+            }
+            .frame(width: 450, height: 37)
+            .offset(x: 20, y: 346.5)
+        }
+        .frame(width: 490, height: 398, alignment: .topLeading)
+    }
+}
+
+private struct ClassicSettingsToggleRow: View {
+    let title: String
+    @Binding var isOn: Bool
+    let height: CGFloat
+
+    init(_ title: String, isOn: Binding<Bool>, height: CGFloat = 37) {
+        self.title = title
+        _isOn = isOn
+        self.height = height
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text(verbatim: title)
+            Spacer(minLength: 8)
+            Toggle("", isOn: $isOn)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.mini)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 5)
+        .frame(height: height)
+    }
+}
+
+private struct ClassicSystemInfoSettingsView: View {
+    @ObservedObject var model: DashboardModel
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(
+                    SettingsView.string("memoryPerformance", table: "SystemInfoSettings"),
+                    isOn: $model.showMemory
+                )
+                Toggle(
+                    SettingsView.string("storageCapacity", table: "SystemInfoSettings"),
+                    isOn: $model.showStorage
+                )
+                Toggle(
+                    SettingsView.string("batteryState", table: "SystemInfoSettings"),
+                    isOn: $model.showBattery
+                )
+                Toggle(
+                    SettingsView.string("networkConnection", table: "SystemInfoSettings"),
+                    isOn: $model.showNetwork
+                )
+            } header: {
+                Text(SettingsView.string("monitoring", table: "SystemInfoSettings"))
+            }
+
+            Section {
+                Toggle(
+                    SettingsView.string("systemInfoBar", table: "SystemInfoSettings"),
+                    isOn: $model.activateSystemInfoBar
+                )
+            } header: {
+                Text(SettingsView.string("experimentalFeature", table: "SystemInfoSettings"))
+            }
+        }
+        .toggleStyle(.switch)
+        .controlSize(.mini)
+        .formStyle(.grouped)
+        .frame(width: 490, height: 398)
     }
 }

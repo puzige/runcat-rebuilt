@@ -38,6 +38,8 @@ mkdir -p "$APP_BUNDLE/Contents/MacOS" "$APP_BUNDLE/Contents/Resources"
 
 cp "$BINARY" "$APP_BUNDLE/Contents/MacOS/$APP_NAME"
 cp "$PLIST"  "$APP_BUNDLE/Contents/Info.plist"
+cp "$REPO_ROOT/assets/icons/self-made@2x.png" \
+   "$APP_BUNDLE/Contents/Resources/self-made@2x.png"
 
 # Animation frames: the dashboard's runner picker loads every runner's
 # frames at runtime from Resources/runners/<name>/page-N@1x.png (see
@@ -50,9 +52,8 @@ mkdir -p "$APP_BUNDLE/Contents/Resources/runners"
 for runner_dir in "$REPO_ROOT"/assets/runners/*/; do
     name="$(basename "$runner_dir")"
     case "$name" in
-        # cat-sleep is a single bitmap, not an animated runner;
         # all-runners/self-made are store placeholders, not runners.
-        cat-sleep|all-runners|self-made) continue ;;
+        all-runners|self-made) continue ;;
     esac
     mkdir -p "$APP_BUNDLE/Contents/Resources/runners/$name"
     # frames are named page-N@1x.png (copied verbatim); non-runner
@@ -105,6 +106,21 @@ for lproj in "$REPO_ROOT"/Resources/*.lproj; do
     if [ -d "$lproj" ]; then
         cp -R "$lproj" "$APP_BUNDLE/Contents/Resources/"
     fi
+done
+
+# Classic localization tables.  Keep SystemInfoKit's Localizable.strings in
+# its own SwiftPM resource bundle; copying it here would overwrite the app's
+# menu strings.  Every other table belongs to the Classic UI and can coexist
+# in the main bundle by table name.
+for source_dir in "$REPO_ROOT"/assets/original-strings/*/; do
+    language="$(basename "$source_dir")"
+    destination="$APP_BUNDLE/Contents/Resources/$language.lproj"
+    mkdir -p "$destination"
+    for strings_file in "$source_dir"*.strings; do
+        [ -f "$strings_file" ] || continue
+        [ "$(basename "$strings_file")" = "Localizable.strings" ] && continue
+        cp "$strings_file" "$destination/"
+    done
 done
 
 echo "==> [3/4] ad-hoc codesign"
