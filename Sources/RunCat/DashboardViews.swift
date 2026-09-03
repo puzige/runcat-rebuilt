@@ -447,26 +447,33 @@ struct SettingsView: View {
     }
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            ClassicGeneralSettingsView(model: model)
-                .tabItem {
-                    Label {
-                        Text(verbatim: Self.string("generalTab", table: "Others"))
-                    } icon: {
-                        Image(systemName: "gear")
-                    }
+        VStack(spacing: 0) {
+            HStack(spacing: 3) {
+                ClassicSettingsTabButton(
+                    icon: "gear",
+                    title: Self.string("generalTab", table: "Others"),
+                    width: 55,
+                    isSelected: selectedTab == 0
+                ) {
+                    selectedTab = 0
                 }
-                .tag(0)
+                ClassicSettingsTabButton(
+                    icon: "cpu",
+                    title: Self.string("systemInfoTab", table: "Others"),
+                    width: 70,
+                    isSelected: selectedTab == 1
+                ) {
+                    selectedTab = 1
+                }
+            }
+            .frame(width: 128, height: 46)
+            .offset(x: -1)
 
-            ClassicSystemInfoSettingsView(model: model)
-                .tabItem {
-                    Label {
-                        Text(verbatim: Self.string("systemInfoTab", table: "Others"))
-                    } icon: {
-                        Image(systemName: "cpu")
-                    }
-                }
-                .tag(1)
+            if selectedTab == 0 {
+                ClassicGeneralSettingsView(model: model)
+            } else {
+                ClassicSystemInfoSettingsView(model: model)
+            }
         }
         .frame(width: 490, height: 444)
         .background {
@@ -492,6 +499,73 @@ private struct SettingsWindowTitleUpdater: NSViewRepresentable {
         DispatchQueue.main.async { [weak nsView] in
             nsView?.window?.title = title
         }
+    }
+}
+
+private struct ClassicSettingsTabButton: View {
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.controlActiveState) private var controlActiveState
+
+    let icon: String
+    let title: String
+    let width: CGFloat
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 0) {
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .regular))
+                    .frame(height: 27)
+                Text(verbatim: title)
+                    .font(.system(size: 11))
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .offset(y: -3)
+            }
+            .foregroundStyle(foreground)
+            .frame(width: width, height: 46)
+            .background {
+                if isSelected {
+                    RoundedRectangle(cornerRadius: 7)
+                        .fill(selectedBackground)
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var foreground: Color {
+        if isSelected {
+            return selectedForeground
+        }
+        return controlActiveState == .inactive ? Color.secondary.opacity(0.5) : Color.secondary
+    }
+
+    private var selectedForeground: Color {
+        guard controlActiveState != .inactive else {
+            return Color.secondary
+        }
+        let accent = NSColor.controlAccentColor.usingColorSpace(.sRGB) ?? .controlAccentColor
+        let classicSelectionAdjustment = 20.0 / 255.0
+        return Color(
+            .sRGB,
+            red: max(0, Double(accent.redComponent) - classicSelectionAdjustment),
+            green: max(0, Double(accent.greenComponent) - classicSelectionAdjustment),
+            blue: max(0, Double(accent.blueComponent) - classicSelectionAdjustment),
+            opacity: Double(accent.alphaComponent)
+        )
+    }
+
+    private var selectedBackground: Color {
+        if colorScheme == .dark {
+            // The Classic dark-mode value has not yet been measured from a reference screenshot.
+            return Color(.sRGB, red: 58 / 255, green: 58 / 255, blue: 60 / 255, opacity: 1)
+        }
+        // Measured in both active and inactive Mac App Store Classic 12.8 windows: #E0DFDF.
+        return Color(.sRGB, red: 224 / 255, green: 223 / 255, blue: 223 / 255, opacity: 1)
     }
 }
 

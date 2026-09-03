@@ -21,7 +21,7 @@ macOS 26 deployment target and product UI are not inherited.
 | Dashboard | Visual baseline matched | 292 x 440 pt; 8 pt outer padding; 196 x 424 pt info card; four available 72 x 64 pt actions top-packed at 8 pt spacing with unused space below; Classic line/bar graphs and dynamic popover material. |
 | System metrics | Functional | CPU, memory, storage, battery (when installed), and network are fed by the official SystemInfoKit data layer. |
 | Runners list | In progress | Classic single-column popover and exact default set/name mapping implemented; final size and scroll behavior still need a live reference capture. |
-| General Settings | In progress | Original native SwiftUI two-tab window and core controls implemented; exact content typography/spacing and login-item behavior still need final validation. |
+| General Settings | In progress | Classic icon-and-label tab bar restored in the 490 x 472 pt window; light-mode selected colors are reference-measured, while dark-mode selection background still needs screenshot calibration. |
 | Runners Store | Not accepted | Original 450 x 450 pt window and archived catalog remain to be rebuilt without pretending StoreKit purchases still work. |
 | Self-Made Runners | Not accepted | PNG validation, frame editor, preview, and persistence remain. |
 | System Info Bar | Partial | Monitoring switches now control dashboard visibility and repository activation, including the unavailable-battery state; Classic secondary status items and confirmation flow remain. |
