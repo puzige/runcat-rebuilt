@@ -19,6 +19,7 @@
 
 import Combine
 import Foundation
+import AppKit
 import SystemInfoKit
 
 private struct SystemInfoBarPreferences: Codable {
@@ -63,7 +64,11 @@ final class DashboardModel: ObservableObject {
         }
     }
     @Published var isRunnerListPresented = false
-    @Published var systemInfo = SystemInfoBundle()
+    @Published var systemInfo = SystemInfoBundle() {
+        didSet {
+            onDashboardSizeChanged?()
+        }
+    }
     @Published private(set) var monitorRevision = 0
     @Published private(set) var cpuHistory = Array(repeating: 0.0, count: 61)
     @Published private(set) var memoryHistory = Array(repeating: 0.0, count: 61)
@@ -125,6 +130,7 @@ final class DashboardModel: ObservableObject {
     var onShowUsageChanged: ((Bool) -> Void)?
     var onRunnerPreferencesChanged: (() -> Void)?
     var onPageChanged: ((Page) -> Void)?
+    var onDashboardSizeChanged: (() -> Void)?
     var onLaunchAtLoginChanged: ((Bool) -> Void)?
 
     private var streamTask: Task<Void, Never>? = nil
@@ -137,6 +143,55 @@ final class DashboardModel: ObservableObject {
             battery: showBattery,
             network: showNetwork
         )
+    }
+
+    /// Classic keeps a 196 pt information card for ordinary metrics, then
+    /// grows it when a localized single-line value needs more room.  The
+    /// 80/68 pt additions account for the card padding, icon column, HStack
+    /// spacing, and the extra detail indentation measured from the 12.8
+    /// MacBook reference capture.
+    var systemInfoCardWidth: CGFloat {
+        Self.systemInfoCardWidth(for: systemInfo, selection: monitoringSelection)
+    }
+
+    var canvasSize: CGSize {
+        guard page == .dashboard else { return page.canvasSize }
+        return CGSize(width: systemInfoCardWidth + 96, height: 440)
+    }
+
+    static func systemInfoCardWidth(
+        for bundle: SystemInfoBundle,
+        selection: DashboardMonitoringSelection
+    ) -> CGFloat {
+        var summaries = [String]()
+        var details = [String]()
+
+        func include(_ info: (any SystemInfo)?) {
+            guard let info else { return }
+            summaries.append(info.summary)
+            details.append(contentsOf: info.details)
+        }
+
+        include(bundle.cpuInfo)
+        if selection.memory { include(bundle.memoryInfo) }
+        if selection.storage { include(bundle.storageInfo) }
+        if selection.battery, let battery = bundle.batteryInfo {
+            summaries.append(battery.summary)
+            if battery.isInstalled {
+                details.append(contentsOf: battery.details)
+            }
+        }
+        if selection.network { include(bundle.networkInfo) }
+
+        let summaryFont = NSFont.preferredFont(forTextStyle: .body)
+        let detailFont = NSFont.preferredFont(forTextStyle: .caption1)
+        let summaryWidth = summaries.map { textWidth($0, font: summaryFont) + 68 }.max() ?? 0
+        let detailWidth = details.map { textWidth($0, font: detailFont) + 80 }.max() ?? 0
+        return max(196, ceil(max(summaryWidth, detailWidth)))
+    }
+
+    private static func textWidth(_ string: String, font: NSFont) -> CGFloat {
+        (string as NSString).size(withAttributes: [.font: font]).width
     }
 
     init() {

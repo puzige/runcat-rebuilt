@@ -22,6 +22,7 @@ import Cocoa
 import Darwin
 import ServiceManagement
 import SwiftUI
+import SystemInfoKit
 
 private final class ArrowlessPanel: NSPanel {
     override var canBecomeKey: Bool { true }
@@ -87,10 +88,19 @@ private final class ArrowlessPopover: NSObject {
     var contentSize = NSSize(width: 292, height: 440) {
         didSet {
             let topEdge = panel.frame.maxY
+            let centerX = panel.frame.midX
             panel.setContentSize(contentSize)
             if panel.isVisible {
                 var frame = panel.frame
                 frame.origin.y = topEdge - frame.height
+                frame.origin.x = centerX - frame.width / 2
+                if let visibleFrame = panel.screen?.visibleFrame {
+                    let inset: CGFloat = 4
+                    frame.origin.x = min(
+                        max(frame.origin.x, visibleFrame.minX + inset),
+                        visibleFrame.maxX - frame.width - inset
+                    )
+                }
                 panel.setFrame(frame, display: true)
             }
             panel.contentView?.layoutSubtreeIfNeeded()
@@ -230,6 +240,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var showUsageItem: NSMenuItem? = nil
     private var previewWindow: NSWindow?
     private var previewHostingController: NSViewController?
+    private var previewContentSizeOverride: NSSize?
     private var settingsWindow: NSWindow?
 
     private var frames: [NSImage] = []
@@ -257,6 +268,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             verifyMonitorTogglesAndExit()
             return
         }
+        if arguments.contains("--verify-battery-layout") {
+            verifyBatteryLayoutAndExit()
+        }
 
         loadFrames(for: model.selectedRunnerID)
         model.onRunnerChanged = { [weak self] runnerID in
@@ -267,6 +281,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         model.onPageChanged = { [weak self] page in
             self?.updateDashboardSize(for: page)
+        }
+        model.onDashboardSizeChanged = { [weak self] in
+            guard let self else { return }
+            self.updateDashboardSize(for: self.model.page)
         }
         model.onRunnerPreferencesChanged = { [weak self] in
             guard let self else { return }
@@ -297,12 +315,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model.startMonitoring()
 
         if arguments.contains("--preview-dashboard") ||
+            arguments.contains("--preview-battery-dashboard") ||
             arguments.contains("--preview-runners") ||
             arguments.contains("--preview-more") {
             if arguments.contains("--preview-more") {
                 model.page = .more
             }
-            showDashboardPreview()
+            if arguments.contains("--preview-battery-dashboard") {
+                showDashboardPreview(
+                    content: AnyView(BatteryDashboardPreviewView(model: model)),
+                    contentSize: BatteryDashboardPreviewView.canvasSize
+                )
+            } else {
+                showDashboardPreview()
+            }
             if arguments.contains("--preview-runners") {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
                     self?.model.isRunnerListPresented = true
@@ -424,6 +450,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    private func verifyBatteryLayoutAndExit() -> Never {
+        let fixture = BatteryDashboardPreviewView.fixture
+        guard let chargingBattery = fixture.batteryInfo else {
+            fputs("error: battery layout fixture is missing battery info\n", stderr)
+            exit(EXIT_FAILURE)
+        }
+        let unpluggedBattery = BatteryInfo(
+            percentage: chargingBattery.percentage,
+            isInstalled: true,
+            isCharging: false,
+            adapterName: nil,
+            maxCapacity: chargingBattery.maxCapacity,
+            cycleCount: chargingBattery.cycleCount,
+            temperature: chargingBattery.temperature
+        )
+        let cardWidth = DashboardModel.systemInfoCardWidth(
+            for: fixture,
+            selection: BatteryDashboardPreviewView.selection
+        )
+        let hasFullAdapterName = chargingBattery.details.contains {
+            $0.contains("140W USB-C Power Adapter")
+        }
+        guard chargingBattery.icon.contains("bolt"),
+              !unpluggedBattery.icon.contains("bolt"),
+              chargingBattery.icon != unpluggedBattery.icon,
+              cardWidth > 196,
+              hasFullAdapterName
+        else {
+            fputs("error: charging icon or adaptive battery width regression\n", stderr)
+            exit(EXIT_FAILURE)
+        }
+        print("Verified adaptive battery layout and charging-state icons (\(Int(cardWidth)) pt card).")
+        exit(EXIT_SUCCESS)
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
         model.stopMonitoring()
         stopRunning()
@@ -539,7 +600,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func setupPopover() {
         // Classic uses a 292 x 440 pt dashboard but shrinks secondary pages
         // such as More to their content height.
-        popover.contentSize = model.page.canvasSize
+        popover.contentSize = model.canvasSize
         popover.behavior = .transient
         popover.contentViewController = NSHostingController(rootView: DashboardRootView(model: model))
         NotificationCenter.default.addObserver(self, selector: #selector(popoverDidCloseNote(_:)),
@@ -549,10 +610,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// Deterministic, menu-bar-independent preview used for visual regression
     /// screenshots: `RunCat --preview-dashboard`.
-    private func showDashboardPreview() {
-        let contentSize = model.page.canvasSize
+    private func showDashboardPreview(
+        content: AnyView? = nil,
+        contentSize requestedContentSize: NSSize? = nil
+    ) {
+        let contentSize = requestedContentSize ?? model.canvasSize
+        previewContentSizeOverride = requestedContentSize
         model.startMonitoring()
-        let controller = NSHostingController(rootView: DashboardRootView(model: model))
+        let rootView = content ?? AnyView(DashboardRootView(model: model))
+        let controller = NSHostingController(rootView: rootView)
         let window = NSWindow(
             contentRect: NSRect(origin: .zero, size: contentSize),
             styleMask: [.borderless],
@@ -594,14 +660,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func updateDashboardSize(for page: DashboardModel.Page) {
-        let contentSize = page.canvasSize
+        let contentSize = model.canvasSize
         popover.contentSize = contentSize
 
         guard let previewWindow else { return }
+        let resolvedContentSize = previewContentSizeOverride ?? contentSize
         let topEdge = previewWindow.frame.maxY
-        previewWindow.setContentSize(contentSize)
+        let centerX = previewWindow.frame.midX
+        previewWindow.setContentSize(resolvedContentSize)
         var frame = previewWindow.frame
         frame.origin.y = topEdge - frame.height
+        frame.origin.x = centerX - frame.width / 2
         previewWindow.setFrame(frame, display: true)
         previewWindow.contentView?.layoutSubtreeIfNeeded()
         previewWindow.invalidateShadow()

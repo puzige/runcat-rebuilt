@@ -74,10 +74,10 @@ struct BatteryRepository: SystemRepository {
             }
         }
 
-        if let isCharging = batteryDict["IsCharging"] as? Int {
-            result.isCharging = isCharging == 1
+        if let isCharging = batteryDict["IsCharging"] as? NSNumber {
+            result.isCharging = isCharging.boolValue
         }
-        if (batteryDict["ExternalConnected"] as? Int) == 1 {
+        if (batteryDict["ExternalConnected"] as? NSNumber)?.boolValue == true {
             let adapter = batteryDict["AdapterDetails"] as? [String: AnyObject]
             result.adapterName = if let name = adapter?["Name"] as? String {
                 name

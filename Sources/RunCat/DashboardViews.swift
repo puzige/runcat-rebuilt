@@ -8,10 +8,12 @@
  Licensed under the Apache License, Version 2.0.
  Modified for the RunCat preservation rebuild, 2026.
 
- SwiftUI content of the menu bar popover.  The 292 x 440 point geometry,
- 196 point system card, action-cell styling, graphs and spacing are measured
- from the Classic 12.8 Retina reference capture; the More page contracts to
- its measured 292 x 216 point content height. After consolidating Store
+ SwiftUI content of the menu bar popover.  The 292 x 440 point baseline,
+ 196 point minimum system card, action-cell styling, graphs and spacing are
+ measured from the Classic 12.8 Retina reference capture.  Like Classic, the
+ dashboard grows horizontally for a long localized metric such as a USB-C
+ power-adapter name; the More page contracts to its measured 292 x 216 point
+ content height. After consolidating Store
  into Runners and hiding the unavailable Self-Made editor, the remaining four
  action cells keep the original 72 x 64 point size, remain top-packed, and leave
  the unused space at the bottom. The system-info views intentionally share the
@@ -35,7 +37,7 @@ struct DashboardRootView: View {
             case .more: MoreView(model: model)
             }
         }
-        .frame(width: model.page.canvasSize.width, height: model.page.canvasSize.height)
+        .frame(width: model.canvasSize.width, height: model.canvasSize.height)
     }
 }
 
@@ -52,7 +54,7 @@ private struct DashboardView: View {
                 memoryHistory: model.memoryHistory,
                 selection: model.monitoringSelection
             )
-            .frame(width: 196, height: 424, alignment: .topLeading)
+            .frame(width: model.systemInfoCardWidth, height: 424, alignment: .topLeading)
             .classicCellStyle(cornerRadius: 8)
             ButtonBar(model: model)
         }
@@ -61,6 +63,87 @@ private struct DashboardView: View {
 
     static func string(_ key: String, table: String? = "Dashboard") -> String {
         Bundle.main.localizedString(forKey: key, value: key, table: table)
+    }
+}
+
+/// Deterministic MacBook-sized fixture for checking that long power-adapter
+/// names stay inside the Classic information card.  It deliberately uses a
+/// longer value than the 90W adapter reported in the regression screenshot.
+struct BatteryDashboardPreviewView: View {
+    @ObservedObject var model: DashboardModel
+
+    var body: some View {
+        let cardWidth = DashboardModel.systemInfoCardWidth(
+            for: Self.fixture,
+            selection: Self.selection
+        )
+        HStack(spacing: 8) {
+            SystemInfoStackView(
+                bundle: Self.fixture,
+                cpuHistory: Array(repeating: 20.8, count: 61),
+                memoryHistory: [],
+                selection: Self.selection
+            )
+            .frame(width: cardWidth, height: 424, alignment: .topLeading)
+            .classicCellStyle(cornerRadius: 8)
+            ButtonBar(model: model)
+        }
+        .padding(8)
+        .frame(width: cardWidth + 96, height: 440)
+    }
+
+    static var canvasSize: CGSize {
+        CGSize(
+            width: DashboardModel.systemInfoCardWidth(for: fixture, selection: selection) + 96,
+            height: 440
+        )
+    }
+
+    static let selection = DashboardMonitoringSelection(
+        memory: true,
+        storage: true,
+        battery: true,
+        network: true
+    )
+
+    static var fixture: SystemInfoBundle {
+        var bundle = SystemInfoBundle()
+        bundle.cpuInfo = SystemInfoKit.CPUInfo(
+            percentage: SystemInfoKit.Percentage(rawValue: 0.208),
+            system: SystemInfoKit.Percentage(rawValue: 0.073),
+            user: SystemInfoKit.Percentage(rawValue: 0.135),
+            idle: SystemInfoKit.Percentage(rawValue: 0.792)
+        )
+        bundle.memoryInfo = SystemInfoKit.MemoryInfo(
+            percentage: SystemInfoKit.Percentage(rawValue: 0.754),
+            pressure: SystemInfoKit.Percentage(rawValue: 0.311),
+            app: SystemInfoKit.ByteData(byteCount: 17_100_000_000),
+            wired: SystemInfoKit.ByteData(byteCount: 3_800_000_000),
+            compressed: SystemInfoKit.ByteData(byteCount: 8_200_000_000)
+        )
+        bundle.storageInfo = SystemInfoKit.StorageInfo(
+            percentage: SystemInfoKit.Percentage(rawValue: 0.471),
+            total: SystemInfoKit.ByteData(byteCount: 994_700_000_000),
+            available: SystemInfoKit.ByteData(byteCount: 526_000_000_000),
+            used: SystemInfoKit.ByteData(byteCount: 468_700_000_000)
+        )
+        bundle.batteryInfo = SystemInfoKit.BatteryInfo(
+            percentage: SystemInfoKit.Percentage(rawValue: 0.8),
+            isInstalled: true,
+            isCharging: true,
+            adapterName: "140W USB-C Power Adapter",
+            maxCapacity: SystemInfoKit.Percentage(rawValue: 0.952),
+            cycleCount: 37,
+            temperature: SystemInfoKit.Temperature(value: 30.2)
+        )
+        bundle.networkInfo = SystemInfoKit.NetworkInfo(
+            hasConnection: true,
+            networkInterface: .wifi,
+            ipAddress: "192.168.0.113",
+            upload: SystemInfoKit.ByteData(byteCount: 146_600),
+            download: SystemInfoKit.ByteData(byteCount: 189_400)
+        )
+        return bundle
     }
 }
 
@@ -135,6 +218,7 @@ private struct SystemInfoSectionView<Accessory: View>: View {
                     ForEach(details.indices, id: \.self) { index in
                         Text(verbatim: details[index])
                             .font(.caption)
+                            .help(details[index])
                     }
                     accessory()
                 }
