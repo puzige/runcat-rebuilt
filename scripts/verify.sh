@@ -34,6 +34,7 @@ fi
 "$APP/Contents/MacOS/RunCat" --verify-live-monitor
 "$APP/Contents/MacOS/RunCat" --verify-monitor-toggles
 "$APP/Contents/MacOS/RunCat" --verify-battery-layout
+"$APP/Contents/MacOS/RunCat" --verify-project-links
 
 # The visual preview starts SystemInfoKit immediately, so keeping it alive
 # catches the resource-bundle trap that affected the v0.2.0 release.  GitHub's

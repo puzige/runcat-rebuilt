@@ -24,6 +24,12 @@ import ServiceManagement
 import SwiftUI
 import SystemInfoKit
 
+enum ProjectLinks {
+    static let repository = URL(string: "https://github.com/puzige/runcat-rebuilt")!
+    static let help = URL(string: "https://github.com/puzige/runcat-rebuilt#readme")!
+    static let issues = URL(string: "https://github.com/puzige/runcat-rebuilt/issues")!
+}
+
 private final class ArrowlessPanel: NSPanel {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
@@ -271,6 +277,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if arguments.contains("--verify-battery-layout") {
             verifyBatteryLayoutAndExit()
         }
+        if arguments.contains("--verify-project-links") {
+            verifyProjectLinksAndExit()
+        }
 
         loadFrames(for: model.selectedRunnerID)
         model.onRunnerChanged = { [weak self] runnerID in
@@ -482,6 +491,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             exit(EXIT_FAILURE)
         }
         print("Verified adaptive battery layout and charging-state icons (\(Int(cardWidth)) pt card).")
+        exit(EXIT_SUCCESS)
+    }
+
+    private func verifyProjectLinksAndExit() -> Never {
+        let expected = [
+            "https://github.com/puzige/runcat-rebuilt",
+            "https://github.com/puzige/runcat-rebuilt#readme",
+            "https://github.com/puzige/runcat-rebuilt/issues",
+        ]
+        let actual = [
+            ProjectLinks.repository.absoluteString,
+            ProjectLinks.help.absoluteString,
+            ProjectLinks.issues.absoluteString,
+        ]
+        guard actual == expected else {
+            fputs("error: project links do not point to the preservation repository\n", stderr)
+            exit(EXIT_FAILURE)
+        }
+        print("Verified About, Help, and issue tracker project links.")
         exit(EXIT_SUCCESS)
     }
 
@@ -705,8 +733,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     static func openAboutWindow() {
+        let description = NSMutableAttributedString(
+            string: "RunCat Classic preservation rebuild\nGitHub Project"
+        )
+        let projectLabel = (description.string as NSString).range(of: "GitHub Project")
+        description.addAttributes(
+            [
+                .link: ProjectLinks.repository,
+                .foregroundColor: NSColor.linkColor,
+                .underlineStyle: NSUnderlineStyle.single.rawValue,
+            ],
+            range: projectLabel
+        )
         NSApp.activate(ignoringOtherApps: true)
-        NSApp.orderFrontStandardAboutPanel(nil)
+        NSApp.orderFrontStandardAboutPanel(options: [.credits: description])
     }
 
     static func showSettingsWindow() {
@@ -739,24 +779,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     static func openHelpPage() {
-        NSWorkspace.shared.open(URL(string: "https://kyome.io/runcat/index.html")!)
+        NSWorkspace.shared.open(ProjectLinks.help)
     }
 
     static func reportIssue() {
-        let appName = (Bundle.main.infoDictionary?["CFBundleName"] as? String) ?? "RunCat"
-        let template = Bundle.main.localizedString(
-            forKey: "mailIssueReport%@",
-            value: "%@ Issue Report",
-            table: "Others"
-        )
-        var components = URLComponents()
-        components.scheme = "mailto"
-        components.path = "kyomesuke@icloud.com"
-        components.queryItems = [
-            URLQueryItem(name: "subject", value: String(format: template, appName))
-        ]
-        guard let url = components.url else { return }
-        NSWorkspace.shared.open(url)
+        NSWorkspace.shared.open(ProjectLinks.issues)
     }
 
     @objc func showLoginItemHint(_ sender: Any?) {

@@ -1,16 +1,33 @@
-# RunCat Rebuilt — 保存/重建项目
+# RunCat Rebuilt — RunCat Classic 12.8 保存与兼容性重建
 
-> **项目定位**：RunCat（`com.kyome.RunCat`）是一款经典的 macOS 菜单栏
-> CPU 监控应用（猫随 CPU 占用率奔跑），作者 Takuto Nakamura。该应用已从
-> Mac App Store **下架**。本项目是它的**保存/重建仓库**：基于作者开源的
-> 精简版骨架 + 从原 App Store 包提取的完整资产，重建一个**未来随时可编译**的版本，
-> 防止资产与构建知识随时间丢失。
+RunCat 是 Takuto Nakamura（Kyome22）创作的经典 macOS 菜单栏 CPU
+监控应用：猫的奔跑速度会随 CPU 占用率变化。Classic 12.8 已从 Mac App
+Store 下架，因此本项目以作者公开的精简版代码为骨架，结合从本人合法下载的
+Classic 12.8 应用中提取的留档资产，进行个人保存、行为考证与现代 macOS
+兼容性重建。
+
+本项目的目的：
+
+- 保存一个能够从源码重复构建的 RunCat Classic 版本，避免应用下架后丢失；
+- 尽可能复现 Classic 12.8 的界面、交互、动画节奏和系统信息展示；
+- 记录资产提取、构建、签名和视觉对照过程，方便未来继续维护；
+- 为本仓库维护版提供集中、公开的帮助与问题反馈入口。
+
+本项目不是 RunCat 官方版本，不代表或冒充原作者，不用于商业发行，也不把
+留档资产重新包装为第三方产品。所有与本维护版有关的问题请在本仓库反馈，
+请勿联系原作者要求支持本项目。
+
+## 项目链接
+
+- GitHub：[puzige/runcat-rebuilt](https://github.com/puzige/runcat-rebuilt)
+- 使用与构建帮助：[README](https://github.com/puzige/runcat-rebuilt#readme)
+- 问题反馈：[GitHub Issues](https://github.com/puzige/runcat-rebuilt/issues)
 
 - 代码：基于 Apache-2.0 开源项目 [Kyome22/menubar_runcat](https://github.com/Kyome22/menubar_runcat)
 - 资产：从下架前的 App Store 完整版（v12.8.0）二进制中提取（提取流程见 `scripts/extract-assets.md`）
 - 构建：纯 SwiftPM（`swift build`），只需 Command Line Tools，**不需要完整 Xcode**
 
-## 当前功能（0.3.29）
+## 当前功能（0.3.30）
 
 - Classic 12.8 同尺寸菜单栏仪表盘（基础尺寸 292 × 440 pt，遇到较长的
   电源适配器或本地化文本时按原版横向扩展）：CPU / 内存曲线、存储条、
@@ -20,7 +37,8 @@
   系统强调色、停止动画或每 10 分钟随机切换
 - Classic 单列角色选择浮层，完整角色资产与原文本地化名称
 - 490 × 472 pt 独立设置窗口（General / System Info）
-- About、帮助、Activity Monitor、退出和右键后备菜单
+- About、Help 和 Report an Issue 均指向本项目 GitHub，另有 Activity
+  Monitor、退出和右键后备菜单
 - 10 种语言的 Classic 原始界面文案
 
 这仍是分阶段复刻，不宣称整个 Classic 已经完成。Runners Store、Self-Made
