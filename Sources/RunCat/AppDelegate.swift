@@ -652,7 +652,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         let controller = NSHostingController(rootView: SettingsView(model: model))
         let window = NSWindow(contentViewController: controller)
-        window.setContentSize(NSSize(width: 490, height: 444))
+        let opensSystemInfo = ProcessInfo.processInfo.arguments.contains("--preview-system-info-settings")
+        window.setContentSize(NSSize(
+            width: SettingsView.contentWidth,
+            height: opensSystemInfo ? SettingsView.systemInfoContentHeight : SettingsView.generalContentHeight
+        ))
         window.styleMask = [.titled, .closable, .miniaturizable]
         window.titlebarAppearsTransparent = true
         window.titlebarSeparatorStyle = .none

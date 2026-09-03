@@ -441,6 +441,10 @@ struct SettingsView: View {
     @ObservedObject var model: DashboardModel
     @State private var selectedTab: Int
 
+    static let contentWidth: CGFloat = 490
+    static let generalContentHeight: CGFloat = 444
+    static let systemInfoContentHeight: CGFloat = 362
+
     init(model: DashboardModel) {
         self.model = model
         _selectedTab = State(initialValue: ProcessInfo.processInfo.arguments.contains("--preview-system-info-settings") ? 1 : 0)
@@ -475,12 +479,17 @@ struct SettingsView: View {
                 ClassicSystemInfoSettingsView(model: model)
             }
         }
-        .frame(width: 490, height: 444)
+        .frame(width: Self.contentWidth, height: contentHeight)
         .background {
             SettingsWindowTitleUpdater(
-                title: Self.string(selectedTab == 0 ? "generalTab" : "systemInfoTab", table: "Others")
+                title: Self.string(selectedTab == 0 ? "generalTab" : "systemInfoTab", table: "Others"),
+                contentHeight: contentHeight
             )
         }
+    }
+
+    private var contentHeight: CGFloat {
+        selectedTab == 0 ? Self.generalContentHeight : Self.systemInfoContentHeight
     }
 
     static func string(_ key: String, table: String = "GeneralSettings") -> String {
@@ -490,6 +499,7 @@ struct SettingsView: View {
 
 private struct SettingsWindowTitleUpdater: NSViewRepresentable {
     let title: String
+    let contentHeight: CGFloat
 
     func makeNSView(context: Context) -> NSView {
         NSView(frame: .zero)
@@ -497,7 +507,24 @@ private struct SettingsWindowTitleUpdater: NSViewRepresentable {
 
     func updateNSView(_ nsView: NSView, context: Context) {
         DispatchQueue.main.async { [weak nsView] in
-            nsView?.window?.title = title
+            guard let window = nsView?.window else { return }
+            window.title = title
+
+            let targetContentSize = NSSize(width: SettingsView.contentWidth, height: contentHeight)
+            if let currentContentSize = window.contentView?.frame.size,
+               abs(currentContentSize.width - targetContentSize.width) < 0.5,
+               abs(currentContentSize.height - targetContentSize.height) < 0.5 {
+                return
+            }
+
+            let targetFrameSize = window.frameRect(
+                forContentRect: NSRect(origin: .zero, size: targetContentSize)
+            ).size
+            var targetFrame = window.frame
+            let fixedTopEdge = targetFrame.maxY
+            targetFrame.size = targetFrameSize
+            targetFrame.origin.y = fixedTopEdge - targetFrameSize.height
+            window.setFrame(targetFrame, display: true, animate: window.isVisible)
         }
     }
 }
@@ -853,6 +880,6 @@ private struct ClassicSystemInfoSettingsView: View {
         .toggleStyle(.switch)
         .controlSize(.mini)
         .formStyle(.grouped)
-        .frame(width: 490, height: 398)
+        .frame(width: SettingsView.contentWidth, height: SettingsView.systemInfoContentHeight - 46)
     }
 }
