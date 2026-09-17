@@ -25,7 +25,7 @@ macOS 26 deployment target and product UI are not inherited.
 | Runners Store | Not accepted | Original 450 x 450 pt window and archived catalog remain to be rebuilt without pretending StoreKit purchases still work. |
 | Self-Made Runners | Not accepted | PNG validation, frame editor, preview, and persistence remain. |
 | System Info Bar | Partial | Monitoring switches now control dashboard visibility and repository activation, including the unavailable-battery state; Classic secondary status items and confirmation flow remain. |
-| More / help / about | Functional | Classic 292 x 216 pt compact in-popover More page, About, Help, legacy mail report, and Quit actions are wired; acknowledgement details remain. |
+| More / help / about | Functional | Classic 292 x 216 pt compact in-popover More page, About, GitHub README help, GitHub Issues reporting, and Quit actions are wired; acknowledgement details remain. |
 
 `scripts/verify.sh` is the executable acceptance gate. It rebuilds from source,
 checks the signed bundle/resources, and locally keeps the live dashboard open

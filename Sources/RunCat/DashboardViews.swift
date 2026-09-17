@@ -288,7 +288,7 @@ private struct ButtonBar: View {
                 iconSize: 23,
                 compactTitle: true
             ) {
-                openActivityMonitor()
+                AppDelegate.openActivityMonitor()
             }
             ClassicActionButton(icon: "gear", title: DashboardView.string("settings")) {
                 AppDelegate.showSettingsWindow()
@@ -302,10 +302,6 @@ private struct ButtonBar: View {
             }
         }
         .frame(height: 424, alignment: .top)
-    }
-
-    private func openActivityMonitor() {
-        NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Utilities/Activity Monitor.app"))
     }
 }
 

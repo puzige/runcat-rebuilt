@@ -750,7 +750,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     static func showSettingsWindow() {
-        (NSApp.delegate as? AppDelegate)?.openSettingsWindow()
+        guard let delegate = NSApp.delegate as? AppDelegate else { return }
+        delegate.popover.close()
+        delegate.openSettingsWindow()
+    }
+
+    static func openActivityMonitor() {
+        (NSApp.delegate as? AppDelegate)?.popover.close()
+        NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Utilities/Activity Monitor.app"))
     }
 
     private func openSettingsWindow() {
