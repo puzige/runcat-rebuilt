@@ -353,14 +353,22 @@ private struct ClassicActionButtonPressStyle: ButtonStyle {
             .opacity(configuration.isPressed ? 0.62 : 1)
             .background {
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(
-                        configuration.isPressed
-                            ? (colorScheme == .dark
-                                ? Color.black.opacity(0.3)
-                                : Color.white.opacity(0.85))
-                            : Color.clear
-                    )
+                    .fill(backgroundColor(isPressed: configuration.isPressed))
             }
+    }
+
+    private func backgroundColor(isPressed: Bool) -> Color {
+        if colorScheme == .dark {
+            return isPressed ? Color.black.opacity(0.3) : .clear
+        }
+
+        // Rendered pixels sampled from the Classic 12.8 action cell: the
+        // unpressed fill is a warm gray, while pressing lightens it slightly.
+        // An opaque fill keeps the ultra-thin material behind this button from
+        // making both states lighter than the reference capture.
+        return isPressed
+            ? Color(red: 240.0 / 255, green: 240.0 / 255, blue: 240.0 / 255)
+            : Color(red: 228.0 / 255, green: 226.0 / 255, blue: 227.0 / 255)
     }
 }
 
