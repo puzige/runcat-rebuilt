@@ -339,9 +339,28 @@ private struct ClassicActionButton: View {
             .frame(width: 72, height: 64)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ClassicActionButtonPressStyle())
         .classicCellStyle(cornerRadius: 8)
         .help(title)
+    }
+}
+
+private struct ClassicActionButtonPressStyle: ButtonStyle {
+    @Environment(\.colorScheme) private var colorScheme
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? 0.62 : 1)
+            .background {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(
+                        configuration.isPressed
+                            ? (colorScheme == .dark
+                                ? Color.black.opacity(0.3)
+                                : Color.white.opacity(0.85))
+                            : Color.clear
+                    )
+            }
     }
 }
 
