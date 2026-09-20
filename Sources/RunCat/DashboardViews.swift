@@ -340,35 +340,17 @@ private struct ClassicActionButton: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(ClassicActionButtonPressStyle())
-        .classicCellStyle(cornerRadius: 8)
         .help(title)
     }
 }
 
 private struct ClassicActionButtonPressStyle: ButtonStyle {
-    @Environment(\.colorScheme) private var colorScheme
-
     func makeBody(configuration: Configuration) -> some View {
+        // Dim the composited material cell, not just its label. This keeps
+        // the idle color responsive to the wallpaper behind the popover.
         configuration.label
+            .classicCellStyle(cornerRadius: 8)
             .opacity(configuration.isPressed ? 0.62 : 1)
-            .background {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(backgroundColor(isPressed: configuration.isPressed))
-            }
-    }
-
-    private func backgroundColor(isPressed: Bool) -> Color {
-        if colorScheme == .dark {
-            return isPressed ? Color.black.opacity(0.3) : .clear
-        }
-
-        // Rendered pixels sampled from the Classic 12.8 action cell: the
-        // unpressed fill is a warm gray, while pressing lightens it slightly.
-        // An opaque fill keeps the ultra-thin material behind this button from
-        // making both states lighter than the reference capture.
-        return isPressed
-            ? Color(red: 240.0 / 255, green: 240.0 / 255, blue: 240.0 / 255)
-            : Color(red: 228.0 / 255, green: 226.0 / 255, blue: 227.0 / 255)
     }
 }
 
