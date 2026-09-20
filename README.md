@@ -27,7 +27,7 @@ Classic 12.8 应用中提取的留档资产，进行个人保存、行为考证�
 - 资产：从下架前的 App Store 完整版（v12.8.0）二进制中提取（提取流程见 `scripts/extract-assets.md`）
 - 构建：纯 SwiftPM（`swift build`），只需 Command Line Tools，**不需要完整 Xcode**
 
-## 当前功能（0.3.32）
+## 当前功能（0.3.33）
 
 - Classic 12.8 同尺寸菜单栏仪表盘（基础尺寸 292 × 440 pt，遇到较长的
   电源适配器或本地化文本时按原版横向扩展）：CPU / 内存曲线、存储条、
@@ -38,7 +38,8 @@ Classic 12.8 应用中提取的留档资产，进行个人保存、行为考证�
 - Classic 单列角色选择浮层，完整角色资产与原文本地化名称
 - 490 × 472 pt 独立设置窗口（General / System Info）
 - 点击仪表盘中的 Settings 或 Activity Monitor 时会先收起仪表盘，再打开对应窗口
-- 仪表盘右侧按钮按下时会明显变亮，图标和文字同步变淡
+- 仪表盘右侧按钮采用接近 Classic 12.8 的灰色底色，按下时适度变亮，
+  图标和文字同步变淡
 - About、Help 和 Report an Issue 均指向本项目 GitHub，另有 Activity
   Monitor、退出和右键后备菜单
 - 10 种语言的 Classic 原始界面文案
