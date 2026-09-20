@@ -27,7 +27,7 @@ Classic 12.8 应用中提取的留档资产，进行个人保存、行为考证�
 - 资产：从下架前的 App Store 完整版（v12.8.0）二进制中提取（提取流程见 `scripts/extract-assets.md`）
 - 构建：纯 SwiftPM（`swift build`），只需 Command Line Tools，**不需要完整 Xcode**
 
-## 当前功能（开发中；最近发布 v0.3.33）
+## 当前功能（0.3.34）
 
 - Classic 12.8 同尺寸菜单栏仪表盘（基础尺寸 292 × 440 pt，遇到较长的
   电源适配器或本地化文本时按原版横向扩展）：CPU / 内存曲线、存储条、
