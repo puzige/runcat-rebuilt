@@ -123,6 +123,7 @@ private final class ArrowlessPopover: NSObject {
 
     private let panel: ArrowlessPanel
     private var outsideClickMonitor: Any?
+    private weak var anchorView: NSView?
 
     override init() {
         panel = ArrowlessPanel(
@@ -159,6 +160,8 @@ private final class ArrowlessPopover: NSObject {
         else {
             return
         }
+
+        anchorView = positioningView
 
         let windowRect = positioningView.convert(positioningRect, to: nil)
         let anchorRect = anchorWindow.convertToScreen(windowRect)
@@ -223,10 +226,21 @@ private final class ArrowlessPopover: NSObject {
         outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(
             matching: [.leftMouseDown, .rightMouseDown]
         ) { [weak self] _ in
-            DispatchQueue.main.async {
+            guard let self else { return }
+            // Let a second click on the status item reach statusItemClicked
+            // while the panel is still visible. Closing on mouse-down would
+            // make the button's mouse-up immediately open it again.
+            guard !self.isClickOnAnchor(at: NSEvent.mouseLocation) else { return }
+            DispatchQueue.main.async { [weak self] in
                 self?.close()
             }
         }
+    }
+
+    private func isClickOnAnchor(at screenPoint: NSPoint) -> Bool {
+        guard let anchorView, let window = anchorView.window else { return false }
+        let anchorRect = window.convertToScreen(anchorView.convert(anchorView.bounds, to: nil))
+        return anchorRect.contains(screenPoint)
     }
 
     private func removeOutsideClickMonitor() {
